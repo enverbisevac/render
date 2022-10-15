@@ -131,7 +131,17 @@ error will be returned if binding fails
 | `err`     | `error`.              | **Required**. Error value.              |
 | `params`  | `...interface{}`      | Variadic number of params. (int/string) |
 
-more help on API can be found in Documentation
+#### Params variadic function parameter
+
+this parameter can be found in almost any function in the library. it accepts only int or string values. When param type is string then api will set header (key, value) pair or in case of int it will be status code.
+
+```go
+render.Render(w, v, http.StatusOK, "Content-Type", "application/json")
+render.Render(w, v, "Content-Type", "application/json")
+render.Render(w, v, "Content-Type", "application/json", http.StatusOK)
+```
+
+more help on API can be found in Documentation.
 
 ## Documentation
 
