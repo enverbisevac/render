@@ -1,5 +1,6 @@
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
 ![GitHub go.mod Go version (subdirectory of monorepo)](https://img.shields.io/github/go-mod/go-version/enverbisevac/render)
+[![Coverage Status](https://coveralls.io/repos/github/enverbisevac/render/badge.svg?branch=main)](https://coveralls.io/github/enverbisevac/render?branch=main)
 
 # Render
 
