@@ -23,14 +23,14 @@ another handler on the server.
 This is where `render` comes in - offering a few simple helpers to provide a simple
 pattern for managing payload encoding and decoding.
 
-I've also combined it with some helpers for responding to content types and parsing
-request bodies. Please have a look at the [examples](./examples/getting_started/README.md).
+Render is also combined with some helpers for responding to content types and parsing
+request bodies. Please have a look at the examples. [examples](./examples/getting_started/README.md).
 
 All feedback is welcome, thank you!
 
 ## Features
 
-- Very simple api
+- Very simple API
 - Render based on Accept header
 - Custom render functions JSON, XML, PlainText ...
 - Map of defaults error and statusCode
@@ -135,7 +135,7 @@ error will be returned if binding fails
 
 #### Params variadic function parameter
 
-`params` can be found in almost any function. When param type is string then api
+`params` can be found in almost any function. When param type is string then API
 will set header (key, value) pair or in case of int it will set status code.
 
 ```go
@@ -248,4 +248,4 @@ To run tests, run the following command
 
 ## Feedback
 
-If you have any feedback, please reach out to us at enver[@]bisevac.com
+If you have any feedback, please reach out enver[@]bisevac.com
