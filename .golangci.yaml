@@ -1,0 +1,89 @@
+linters-settings:
+  govet:
+    check-shadowing: true
+  gocyclo:
+    min-complexity: 30
+  cyclop:
+    max-complexity: 30
+  maligned:
+    suggest-new: true
+  dupl:
+    threshold: 200
+  goconst:
+    min-len: 2
+    min-occurrences: 3
+  goheader:
+    # Supports two types 'const` and `regexp`.
+    # Values can be used recursively.
+    # Default: {}
+    values:
+      const:
+        # Define here const type values in format k:v.
+        # For example:
+        AUTHOR: Enver Bisevac
+      #regexp:
+        # Define here regexp type values.
+        # for example:
+        # AUTHOR: .*@mycompany\.com
+    # The template use for checking.
+    # Default: ""
+    template: |-
+      Copyright (c) 2022 {{ AUTHOR }}
+
+      Permission is hereby granted, free of charge, to any person obtaining a copy of
+      this software and associated documentation files (the "Software"), to deal in
+      the Software without restriction, including without limitation the rights to
+      use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+      the Software, and to permit persons to whom the Software is furnished to do so,
+      subject to the following conditions:
+
+      The above copyright notice and this permission notice shall be included in all
+      copies or substantial portions of the Software.
+
+      THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+      IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+      FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+      COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+      IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+      CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+    # As alternative of directive 'template', you may put the path to file with the template source.
+    # Useful if you need to load the template from a specific file.
+    # Default: ""
+    # template-path: /path/to/my/template.tmpl
+
+linters:
+  enable-all: true
+  disable:
+    - golint # deprecated, replaced with revive
+    - interfacer # deprecated
+    - maligned # deprecated
+    - deadcode # deprecated (since v1.49.0) due to: The owner seems to have abandoned the linter.  Replaced by unused.
+    - structcheck # is deprecated (since v1.49.0) due to: The owner seems to have abandoned the linter.  Replaced by unused.
+    - varcheck # is deprecated (since v1.49.0) due to: The owner seems to have abandoned the linter.  Replaced by unused. 
+    - ifshort # is deprecated (since v1.48.0) due to: The repository of the linter has been deprecated by the owner.
+    - nosnakecase # deprecated (since v1.48.1) due to: The repository of the linter has been deprecated by the owner.  Replaced by revive(var-naming).
+    - wrapcheck
+    - nlreturn
+    - gomnd
+    - goerr113
+    - exhaustivestruct
+    - wsl
+    - whitespace
+    - lll
+    - scopelint
+    - nestif
+    - funlen
+    - paralleltest
+    - godot
+    - varnamelen
+    - ireturn
+    - gochecknoglobals
+    - goconst
+    - exhaustruct
+    - nonamedreturns
+
+issues:
+  exclude-rules:
+    - linters:
+        - gosec
+      text: "G[501]"
