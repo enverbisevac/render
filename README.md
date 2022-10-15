@@ -1,6 +1,7 @@
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
 ![GitHub go.mod Go version (subdirectory of monorepo)](https://img.shields.io/github/go-mod/go-version/enverbisevac/render)
 [![test](https://github.com/enverbisevac/render/actions/workflows/test.yml/badge.svg)](https://github.com/enverbisevac/render/actions/workflows/test.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/enverbisevac/render)](https://goreportcard.com/report/github.com/enverbisevac/render)
 
 # Render
 
