@@ -1,7 +1,5 @@
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
 ![GitHub go.mod Go version (subdirectory of monorepo)](https://img.shields.io/github/go-mod/go-version/enverbisevac/render)
-[![test](https://github.com/enverbisevac/render/actions/workflows/test.yml/badge.svg)](https://github.com/enverbisevac/render/actions/workflows/test.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/enverbisevac/render)](https://goreportcard.com/report/github.com/enverbisevac/render)
 
 # Render
 
@@ -91,7 +89,7 @@ func main() {
 
 ## API Reference
 
-#### Get all items
+#### Bind request body to data type `v`
 
 ```go
   func Bind(r *http.Request, v interface{}) error
@@ -104,18 +102,33 @@ func main() {
 
 error will be returned if binding fails
 
-#### Get item
+#### Render responses based on request `r` headers
 
 ```go
   func Render(w http.ResponseWriter, r *http.Request, v interface{}, params ...interface{})
 ```
 
-| Parameter | Type                  | Description                              |
-| :-------- | :-------------------- | :--------------------------------------- |
-| `w`       | `http.WriterResponse` | **Required**. Writer.                    |
-| `r`       | `*http.Request`       | **Required**. Handler request param.     |
-| `v`       | `interface{}`         | **Required**. Pointer to variable.       |
-| `params`  | `...interface{}`      | Variadic number of params. (int\|string) |
+| Parameter | Type                  | Description                          |
+| :-------- | :-------------------- | :----------------------------------- | ------- |
+| `w`       | `http.WriterResponse` | **Required**. Writer.                |
+| `r`       | `*http.Request`       | **Required**. Handler request param. |
+| `v`       | `interface{}`         | **Required**. Pointer to variable.   |
+| `params`  | `...interface{}`      | Variadic number of params. (int      | string) |
+
+#### Render error response and status code based on request `r` headers
+
+```go
+  func Error(w http.ResponseWriter, r *http.Request, err error, params ...interface{})
+```
+
+| Parameter | Type                  | Description                          |
+| :-------- | :-------------------- | :----------------------------------- | ------- |
+| `w`       | `http.WriterResponse` | **Required**. Writer.                |
+| `r`       | `*http.Request`       | **Required**. Handler request param. |
+| `err`     | `error`.              | **Required**. Error value.           |
+| `params`  | `...interface{}`      | Variadic number of params. (int      | string) |
+
+more help on API can be found in Documentation
 
 ## Documentation
 
