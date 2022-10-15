@@ -2,6 +2,7 @@
 ![GitHub go.mod Go version (subdirectory of monorepo)](https://img.shields.io/github/go-mod/go-version/enverbisevac/render)
 [![Coverage Status](https://coveralls.io/repos/github/enverbisevac/render/badge.svg?branch=main)](https://coveralls.io/github/enverbisevac/render?branch=main)
 [![Go Report Card](https://goreportcard.com/badge/github.com/enverbisevac/render)](https://goreportcard.com/report/github.com/enverbisevac/render)
+[![CodeQL](https://github.com/enverbisevac/render/actions/workflows/codeql-analysis.yaml/badge.svg)](https://github.com/enverbisevac/render/actions/workflows/codeql-analysis.yaml)
 
 # Render
 
