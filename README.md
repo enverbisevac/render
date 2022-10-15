@@ -31,9 +31,11 @@ All feedback is welcome, thank you!
 ## Features
 
 - Very simple api
+- Render based on Accept header
+- Custom render functions JSON, XML, PlainText ...
 - Map of defaults error and statusCode
 - Customizable error handling
-- Easy decoding uploads based on request body and content type
+- Easy decoding request body based on content type
 - Switch encoders/decoders with some popular open source lib // TODO
 
 ## Installation
@@ -133,12 +135,28 @@ error will be returned if binding fails
 
 #### Params variadic function parameter
 
-this parameter can be found in almost any function in the library. it accepts only int or string values. When param type is string then api will set header (key, value) pair or in case of int it will be status code.
+`params` can be found in almost any function. When param type is string then api
+will set header (key, value) pair or in case of int it will set status code.
 
 ```go
 render.Render(w, v, http.StatusOK, "Content-Type", "application/json")
 render.Render(w, v, "Content-Type", "application/json")
 render.Render(w, v, "Content-Type", "application/json", http.StatusOK)
+```
+
+#### Other functions
+
+```go
+func Blob(w http.ResponseWriter, v []byte, params ...interface{})
+func PlainText(w http.ResponseWriter, v string, args ...interface{})
+func HTML(w http.ResponseWriter, v string, args ...interface{})
+func JSON(w http.ResponseWriter, v interface{}, args ...interface{})
+func XML(w http.ResponseWriter, v interface{}, args ...interface{})
+func File(w http.ResponseWriter, r *http.Request, fullPath string)
+func Attachment(w http.ResponseWriter, r *http.Request, fullPath string)
+func Inline(w http.ResponseWriter, r *http.Request, fullPath string)
+func NoContent(w http.ResponseWriter)
+func Stream(w http.ResponseWriter, r *http.Request, v interface{})
 ```
 
 more help on API can be found in Documentation.
