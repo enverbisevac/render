@@ -113,12 +113,12 @@ error will be returned if binding fails
   func Render(w http.ResponseWriter, r *http.Request, v interface{}, params ...interface{})
 ```
 
-| Parameter | Type                  | Description                             |
-| :-------- | :-------------------- | :-------------------------------------- |
-| `w`       | `http.WriterResponse` | **Required**. Writer.                   |
-| `r`       | `*http.Request`       | **Required**. Handler request param.    |
-| `v`       | `interface{}`         | **Required**. Pointer to variable.      |
-| `params`  | `...interface{}`      | Variadic number of params. (int/string) |
+| Parameter | Type                  | Description                                         |
+| :-------- | :-------------------- | :-------------------------------------------------- |
+| `w`       | `http.WriterResponse` | **Required**. Writer.                               |
+| `r`       | `*http.Request`       | **Required**. Handler request param.                |
+| `v`       | `interface{}`         | **Required**. Pointer to variable.                  |
+| `params`  | `...interface{}`      | Variadic number of params. (int/string/http.Header) |
 
 #### Render error response and status code based on request `r` headers
 
@@ -126,17 +126,17 @@ error will be returned if binding fails
   func Error(w http.ResponseWriter, r *http.Request, err error, params ...interface{})
 ```
 
-| Parameter | Type                  | Description                             |
-| :-------- | :-------------------- | :-------------------------------------- |
-| `w`       | `http.WriterResponse` | **Required**. Writer.                   |
-| `r`       | `*http.Request`       | **Required**. Handler request param.    |
-| `err`     | `error`.              | **Required**. Error value.              |
-| `params`  | `...interface{}`      | Variadic number of params. (int/string) |
+| Parameter | Type                  | Description                                         |
+| :-------- | :-------------------- | :-------------------------------------------------- |
+| `w`       | `http.WriterResponse` | **Required**. Writer.                               |
+| `r`       | `*http.Request`       | **Required**. Handler request param.                |
+| `err`     | `error`.              | **Required**. Error value.                          |
+| `params`  | `...interface{}`      | Variadic number of params. (int/string/http.Header) |
 
 #### Params variadic function parameter
 
-`params` can be found in almost any function. When param type is string then API
-will set header (key, value) pair or in case of int it will set status code.
+`params` can be found in almost any function. Param type can be string, http.Header or integer.
+Integer value represent status code. String or http.header are just for response headers.
 
 ```go
 render.Render(w, v, http.StatusOK, "Content-Type", "application/json")
@@ -144,6 +144,10 @@ render.Render(w, v, http.StatusOK, "Content-Type", "application/json")
 render.Render(w, v, http.StatusOK, render.ContentTypeHeader, render.ApplicationJSON)
 render.Render(w, v, "Content-Type", "application/json")
 render.Render(w, v, "Content-Type", "application/json", http.StatusOK)
+// using http.Header
+render.Render(w, v, http.Header{
+	"Content-Type": []string{"application/json"},
+}, http.StatusOK)
 ```
 
 #### Integrate 3rd party JSON/XML lib
