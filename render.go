@@ -60,8 +60,10 @@ func DefaultResponder(w http.ResponseWriter, r *http.Request, v interface{}, par
 		Stream(w, r, v)
 	case ContentTypeForm:
 		// TBD
+		fallthrough
 	case ContentTypeHTML:
 		// TBD
+		fallthrough
 	default:
 		JSON(w, v, params...)
 	}
@@ -146,7 +148,7 @@ func JSON(w http.ResponseWriter, v interface{}, args ...interface{}) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	Blob(w, buf.Bytes(), append(args, "application/json; charset=utf-8")...)
+	Blob(w, buf.Bytes(), append(args, "Content-Type", "application/json; charset=utf-8")...)
 }
 
 // XML marshals 'v' to JSON, setting the Content-Type as application/xml. It
@@ -169,7 +171,7 @@ func XML(w http.ResponseWriter, v interface{}, args ...interface{}) {
 		w.Write([]byte(xml.Header)) //nolint:errcheck
 	}
 
-	Blob(w, b, append(args, "application/xml; charset=utf-8")...)
+	Blob(w, b, append(args, "Content-Type", "application/xml; charset=utf-8")...)
 }
 
 // File sends a response with the content of the file.
