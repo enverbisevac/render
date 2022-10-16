@@ -146,18 +146,18 @@ func Blob(w http.ResponseWriter, v []byte, params ...interface{}) {
 
 // PlainText writes a string to the response, setting the Content-Type as
 // text/plain.
-func PlainText(w http.ResponseWriter, v string, args ...interface{}) {
-	Blob(w, []byte(v), append(args, ContentTypeHeader, "text/plain; charset=utf-8")...)
+func PlainText(w http.ResponseWriter, v string, params ...interface{}) {
+	Blob(w, []byte(v), append(params, ContentTypeHeader, "text/plain; charset=utf-8")...)
 }
 
 // HTML writes a string to the response, setting the Content-Type as text/html.
-func HTML(w http.ResponseWriter, v string, args ...interface{}) {
-	Blob(w, []byte(v), append(args, ContentTypeHeader, "text/html; charset=utf-8")...)
+func HTML(w http.ResponseWriter, v string, params ...interface{}) {
+	Blob(w, []byte(v), append(params, ContentTypeHeader, "text/html; charset=utf-8")...)
 }
 
 // JSON marshals 'v' to JSON, automatically escaping HTML and setting the
 // Content-Type as application/json.
-func JSON(w http.ResponseWriter, v interface{}, args ...interface{}) {
+func JSON(w http.ResponseWriter, v interface{}, params ...interface{}) {
 	buf := &bytes.Buffer{}
 	enc := json.NewEncoder(buf)
 	enc.SetEscapeHTML(true)
@@ -165,13 +165,13 @@ func JSON(w http.ResponseWriter, v interface{}, args ...interface{}) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	Blob(w, buf.Bytes(), append(args, ContentTypeHeader, ApplicationJSONExt)...)
+	Blob(w, buf.Bytes(), append(params, ContentTypeHeader, ApplicationJSONExt)...)
 }
 
 // XML marshals 'v' to JSON, setting the Content-Type as application/xml. It
 // will automatically prepend a generic XML header (see encoding/xml.Header) if
 // one is not found in the first 100 bytes of 'v'.
-func XML(w http.ResponseWriter, v interface{}, args ...interface{}) {
+func XML(w http.ResponseWriter, v interface{}, params ...interface{}) {
 	b, err := xml.Marshal(v)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -188,7 +188,7 @@ func XML(w http.ResponseWriter, v interface{}, args ...interface{}) {
 		w.Write([]byte(xml.Header)) //nolint:errcheck
 	}
 
-	Blob(w, b, append(args, ContentTypeHeader, "application/xml; charset=utf-8")...)
+	Blob(w, b, append(params, ContentTypeHeader, "application/xml; charset=utf-8")...)
 }
 
 // File sends a response with the content of the file.
