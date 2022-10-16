@@ -29,6 +29,11 @@ import (
 	"strconv"
 )
 
+const (
+	ContentTypeHeader = "Content-Type"
+	AcceptHeader      = "Accept"
+)
+
 // Respond is a package-level variable set to our default Responder. We do this
 // because it allows you to set render.Respond to another function with the
 // same function signature, while also utilizing the render.Responder() function
@@ -94,7 +99,7 @@ func Render(w http.ResponseWriter, r *http.Request, v interface{}, params ...int
 //
 // the order of the parameters does not matter.
 func Blob(w http.ResponseWriter, v []byte, params ...interface{}) {
-	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set(ContentTypeHeader, "application/octet-stream")
 	status, key, value := 0, "", ""
 	for _, param := range params {
 		if rv := reflect.ValueOf(param); rv.Kind() == reflect.Ptr {
@@ -130,12 +135,12 @@ func Blob(w http.ResponseWriter, v []byte, params ...interface{}) {
 // PlainText writes a string to the response, setting the Content-Type as
 // text/plain.
 func PlainText(w http.ResponseWriter, v string, args ...interface{}) {
-	Blob(w, []byte(v), append(args, "Content-Type", "text/plain; charset=utf-8")...)
+	Blob(w, []byte(v), append(args, ContentTypeHeader, "text/plain; charset=utf-8")...)
 }
 
 // HTML writes a string to the response, setting the Content-Type as text/html.
 func HTML(w http.ResponseWriter, v string, args ...interface{}) {
-	Blob(w, []byte(v), append(args, "Content-Type", "text/html; charset=utf-8")...)
+	Blob(w, []byte(v), append(args, ContentTypeHeader, "text/html; charset=utf-8")...)
 }
 
 // JSON marshals 'v' to JSON, automatically escaping HTML and setting the
@@ -148,7 +153,7 @@ func JSON(w http.ResponseWriter, v interface{}, args ...interface{}) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	Blob(w, buf.Bytes(), append(args, "Content-Type", "application/json; charset=utf-8")...)
+	Blob(w, buf.Bytes(), append(args, ContentTypeHeader, ApplicationJSONExt)...)
 }
 
 // XML marshals 'v' to JSON, setting the Content-Type as application/xml. It
@@ -171,13 +176,13 @@ func XML(w http.ResponseWriter, v interface{}, args ...interface{}) {
 		w.Write([]byte(xml.Header)) //nolint:errcheck
 	}
 
-	Blob(w, b, append(args, "Content-Type", "application/xml; charset=utf-8")...)
+	Blob(w, b, append(args, ContentTypeHeader, "application/xml; charset=utf-8")...)
 }
 
 // File sends a response with the content of the file.
 func File(w http.ResponseWriter, r *http.Request, fullPath string) {
 	w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(fullPath))
-	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set(ContentTypeHeader, "application/octet-stream")
 	http.ServeFile(w, r, fullPath)
 }
 
@@ -185,14 +190,14 @@ func File(w http.ResponseWriter, r *http.Request, fullPath string) {
 // file.
 func Attachment(w http.ResponseWriter, r *http.Request, fullPath string) {
 	w.Header().Set("Content-Disposition", "attachment")
-	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set(ContentTypeHeader, "application/octet-stream")
 	http.ServeFile(w, r, fullPath)
 }
 
 // Inline sends a response as inline, opening the file in the browser.
 func Inline(w http.ResponseWriter, r *http.Request, fullPath string) {
 	w.Header().Set("Content-Disposition", "inline")
-	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set(ContentTypeHeader, "application/octet-stream")
 	http.ServeFile(w, r, fullPath)
 }
 
@@ -207,7 +212,7 @@ func Stream(w http.ResponseWriter, r *http.Request, v interface{}) {
 		panic(fmt.Sprintf("render: event stream expects a channel, not %v", reflect.TypeOf(v).Kind()))
 	}
 
-	w.Header().Set("Content-Type", "text/event-stream; charset=utf-8")
+	w.Header().Set(ContentTypeHeader, "text/event-stream; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-cache")
 
 	if r.ProtoMajor == 1 {

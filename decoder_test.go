@@ -48,7 +48,7 @@ func TestDefaultDecoder(t *testing.T) {
 			args: args{
 				r: &http.Request{
 					Header: http.Header{
-						"Content-Type": []string{"application/json"},
+						render.ContentTypeHeader: []string{render.ApplicationJSON},
 					},
 					Body: io.NopCloser(strings.NewReader("{\"name\":\"Enver\"}")),
 				},
@@ -61,7 +61,7 @@ func TestDefaultDecoder(t *testing.T) {
 			args: args{
 				r: &http.Request{
 					Header: http.Header{
-						"Content-Type": []string{"application/xml"},
+						render.ContentTypeHeader: []string{"application/xml"},
 					},
 					Body: io.NopCloser(strings.NewReader("<name>Enver</name>")),
 				},
@@ -74,7 +74,7 @@ func TestDefaultDecoder(t *testing.T) {
 			args: args{
 				r: &http.Request{
 					Header: http.Header{
-						"Content-Type": []string{"application/x-www-form-urlencoded"},
+						render.ContentTypeHeader: []string{"application/x-www-form-urlencoded"},
 					},
 					Body: io.NopCloser(strings.NewReader("name=Enver")),
 				},
@@ -87,7 +87,7 @@ func TestDefaultDecoder(t *testing.T) {
 			args: args{
 				r: &http.Request{
 					Header: http.Header{
-						"Content-Type": []string{"some content type"},
+						render.ContentTypeHeader: []string{"some content type"},
 					},
 					Body: io.NopCloser(strings.NewReader("")),
 				},

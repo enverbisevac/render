@@ -140,6 +140,8 @@ will set header (key, value) pair or in case of int it will set status code.
 
 ```go
 render.Render(w, v, http.StatusOK, "Content-Type", "application/json")
+// or you can use const ContentTypeHeader, ApplicationJSON
+render.Render(w, v, http.StatusOK, render.ContentTypeHeader, render.ApplicationJSON)
 render.Render(w, v, "Content-Type", "application/json")
 render.Render(w, v, "Content-Type", "application/json", http.StatusOK)
 ```

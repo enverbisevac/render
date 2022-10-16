@@ -69,7 +69,7 @@ func TestData(t *testing.T) {
 			status:  http.StatusOK,
 			content: []byte("Some content"),
 			header: http.Header{
-				"Content-Type": []string{"application/octet-stream"},
+				render.ContentTypeHeader: []string{"application/octet-stream"},
 			},
 		},
 		{
@@ -82,7 +82,7 @@ func TestData(t *testing.T) {
 			status:  http.StatusCreated,
 			content: []byte("Some content"),
 			header: http.Header{
-				"Content-Type": []string{"application/octet-stream"},
+				render.ContentTypeHeader: []string{"application/octet-stream"},
 			},
 		},
 		{
@@ -90,12 +90,12 @@ func TestData(t *testing.T) {
 			args: args{
 				w:      writer,
 				v:      []byte("Some content"),
-				params: []interface{}{"Content-Type", "application/json"},
+				params: []interface{}{render.ContentTypeHeader, render.ApplicationJSON},
 			},
 			status:  http.StatusOK,
 			content: []byte("Some content"),
 			header: http.Header{
-				"Content-Type": []string{"application/json"},
+				render.ContentTypeHeader: []string{render.ApplicationJSON},
 			},
 		},
 		{
@@ -103,12 +103,12 @@ func TestData(t *testing.T) {
 			args: args{
 				w:      writer,
 				v:      []byte("Some content"),
-				params: []interface{}{http.StatusCreated, "Content-Type", "application/json"},
+				params: []interface{}{http.StatusCreated, render.ContentTypeHeader, render.ApplicationJSON},
 			},
 			status:  http.StatusCreated,
 			content: []byte("Some content"),
 			header: http.Header{
-				"Content-Type": []string{"application/json"},
+				render.ContentTypeHeader: []string{render.ApplicationJSON},
 			},
 		},
 		{
@@ -116,12 +116,12 @@ func TestData(t *testing.T) {
 			args: args{
 				w:      writer,
 				v:      []byte("Some content"),
-				params: []interface{}{http.StatusCreated, "Content-Type"},
+				params: []interface{}{http.StatusCreated, render.ContentTypeHeader},
 			},
 			status:  http.StatusCreated,
 			content: []byte("Some content"),
 			header: http.Header{
-				"Content-Type": []string{"application/octet-stream"},
+				render.ContentTypeHeader: []string{"application/octet-stream"},
 			},
 		},
 		{
@@ -129,12 +129,12 @@ func TestData(t *testing.T) {
 			args: args{
 				w:      writer,
 				v:      []byte("Some content"),
-				params: []interface{}{"Content-Type"},
+				params: []interface{}{render.ContentTypeHeader},
 			},
 			status:  http.StatusOK,
 			content: []byte("Some content"),
 			header: http.Header{
-				"Content-Type": []string{"application/octet-stream"},
+				render.ContentTypeHeader: []string{"application/octet-stream"},
 			},
 		},
 	}

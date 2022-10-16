@@ -81,7 +81,7 @@ func TestError(t *testing.T) {
 				w: writer,
 				r: &http.Request{
 					Header: http.Header{
-						"Accept": []string{"application/json"},
+						render.AcceptHeader: []string{render.ApplicationJSON},
 					},
 				},
 				err: errors.New("some error"),
@@ -95,7 +95,7 @@ func TestError(t *testing.T) {
 				w: writer,
 				r: &http.Request{
 					Header: http.Header{
-						"Accept": []string{"application/json"},
+						render.AcceptHeader: []string{render.ApplicationJSON},
 					},
 				},
 				err: fmt.Errorf("file %s %w", "demo.txt", render.ErrNotFound),
@@ -109,7 +109,7 @@ func TestError(t *testing.T) {
 				w: writer,
 				r: &http.Request{
 					Header: http.Header{
-						"Accept": []string{"application/json"},
+						render.AcceptHeader: []string{render.ApplicationJSON},
 					},
 				},
 				err:    errors.New("bad input data"),
@@ -124,7 +124,7 @@ func TestError(t *testing.T) {
 				w: writer,
 				r: &http.Request{
 					Header: http.Header{
-						"Accept": []string{"application/json"},
+						render.AcceptHeader: []string{render.ApplicationJSON},
 					},
 				},
 				err: &render.HTTPError{
@@ -141,7 +141,7 @@ func TestError(t *testing.T) {
 				w: writer,
 				r: &http.Request{
 					Header: http.Header{
-						"Accept": []string{"application/json"},
+						render.AcceptHeader: []string{render.ApplicationJSON},
 					},
 				},
 				err: &render.HTTPError{

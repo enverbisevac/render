@@ -24,6 +24,19 @@ import (
 	"strings"
 )
 
+const (
+	ApplicationXHTML   = "application/xhtml+xml"
+	ApplicationJSON    = "application/json"
+	ApplicationJSONExt = "application/json; charset=utf-8"
+	ApplicationXML     = "application/xml"
+	ApplicationFormURL = "application/x-www-form-urlencoded"
+	TextPlain          = "text/plain"
+	TextHTML           = "text/html"
+	TextXML            = "text/xml"
+	TextJavascript     = "text/javascript"
+	TextEventStream    = "text/event-stream"
+)
+
 // DefaultContentType is a package-level variable set to our default content type
 var DefaultContentType = ContentTypeJSON
 
@@ -45,17 +58,17 @@ const (
 func GetContentType(s string) ContentType {
 	s = strings.TrimSpace(strings.Split(s, ";")[0])
 	switch s {
-	case "text/plain":
+	case TextPlain:
 		return ContentTypePlainText
-	case "text/html", "application/xhtml+xml":
+	case TextHTML, ApplicationXHTML:
 		return ContentTypeHTML
-	case "application/json", "text/javascript":
+	case ApplicationJSON, TextJavascript:
 		return ContentTypeJSON
-	case "text/xml", "application/xml":
+	case TextXML, ApplicationXML:
 		return ContentTypeXML
-	case "application/x-www-form-urlencoded":
+	case ApplicationFormURL:
 		return ContentTypeForm
-	case "text/event-stream":
+	case TextEventStream:
 		return ContentTypeEventStream
 	default:
 		return ContentTypeUnknown
@@ -65,7 +78,7 @@ func GetContentType(s string) ContentType {
 // GetRequestContentType is a helper function that returns ContentType based on
 // context or request headers.
 func GetRequestContentType(r *http.Request) ContentType {
-	return GetContentType(r.Header.Get("Content-Type"))
+	return GetContentType(r.Header.Get(ContentTypeHeader))
 }
 
 // GetAcceptedContentType reads Accept header from request and returns ContentType
@@ -73,7 +86,7 @@ func GetAcceptedContentType(r *http.Request) ContentType {
 	var contentType ContentType
 
 	// Parse request Accept header.
-	fields := strings.Split(r.Header.Get("Accept"), ",")
+	fields := strings.Split(r.Header.Get(AcceptHeader), ",")
 	if len(fields) > 0 {
 		contentType = GetContentType(strings.TrimSpace(fields[0]))
 	}
