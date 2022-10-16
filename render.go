@@ -24,12 +24,14 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"io"
 	"net/http"
 	"reflect"
 	"strconv"
 	"strings"
 )
 
+// Header names used in request/response
 const (
 	ContentTypeHeader = "Content-Type"
 	AcceptHeader      = "Accept"
@@ -42,6 +44,30 @@ const (
 // defaults. For example, maybe you want to test if v is an error and respond
 // differently, or log something before you respond.
 var Respond = DefaultResponder
+
+// Encoder provide method for encoding reader data
+type Encoder interface {
+	Encode(v interface{}) error
+}
+
+var (
+	// JSONEncoder is a package variable set to default JSON encoder
+	JSONEncoder = DefaultJSONEncoder
+	// XMLEncoder is a package variable set to default XML encoder
+	XMLEncoder = DefaultXMLEncoder
+)
+
+// DefaultJSONEncoder creates default JSON encoder
+func DefaultJSONEncoder(w io.Writer) Encoder {
+	enc := json.NewEncoder(w)
+	enc.SetEscapeHTML(true)
+	return enc
+}
+
+// DefaultXMLEncoder creates default XML encoder
+func DefaultXMLEncoder(w io.Writer) Encoder {
+	return xml.NewEncoder(w)
+}
 
 // DefaultResponder handles streaming JSON and XML responses, automatically setting the
 // Content-Type based on request headers. It will default to a JSON response.
@@ -159,9 +185,7 @@ func HTML(w http.ResponseWriter, v string, params ...interface{}) {
 // Content-Type as application/json.
 func JSON(w http.ResponseWriter, v interface{}, params ...interface{}) {
 	buf := &bytes.Buffer{}
-	enc := json.NewEncoder(buf)
-	enc.SetEscapeHTML(true)
-	if err := enc.Encode(v); err != nil {
+	if err := JSONEncoder(buf).Encode(v); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -172,11 +196,12 @@ func JSON(w http.ResponseWriter, v interface{}, params ...interface{}) {
 // will automatically prepend a generic XML header (see encoding/xml.Header) if
 // one is not found in the first 100 bytes of 'v'.
 func XML(w http.ResponseWriter, v interface{}, params ...interface{}) {
-	b, err := xml.Marshal(v)
-	if err != nil {
+	buf := &bytes.Buffer{}
+	if err := XMLEncoder(buf).Encode(v); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	b := buf.Bytes()
 
 	// Try to find <?xml header in first 100 bytes (just in case there're some XML comments).
 	findHeaderUntil := len(b)

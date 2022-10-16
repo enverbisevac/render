@@ -36,7 +36,7 @@ All feedback is welcome, thank you!
 - Map of defaults error and statusCode
 - Customizable error handling
 - Easy decoding request body based on content type
-- Switch encoders/decoders with some popular open source lib // TODO
+- Switch encoders/decoders with some popular open source lib
 
 ## Installation
 
@@ -144,6 +144,31 @@ render.Render(w, v, http.StatusOK, "Content-Type", "application/json")
 render.Render(w, v, http.StatusOK, render.ContentTypeHeader, render.ApplicationJSON)
 render.Render(w, v, "Content-Type", "application/json")
 render.Render(w, v, "Content-Type", "application/json", http.StatusOK)
+```
+
+#### Integrate 3rd party JSON/XML lib
+
+in this example we will replace standard encoder with goccy/go-json.
+
+```go
+package main
+
+import (
+	"fmt"
+	"io"
+	"net/http"
+	"strings"
+
+	"github.com/goccy/go-json"
+
+	"github.com/enverbisevac/render"
+)
+
+func init() {
+	render.JSONEncoder = func(w io.Writer) render.Encoder {
+		return json.NewEncoder(w)
+	}
+}
 ```
 
 #### Other functions

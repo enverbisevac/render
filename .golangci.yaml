@@ -50,6 +50,11 @@ linters-settings:
     # Useful if you need to load the template from a specific file.
     # Default: ""
     # template-path: /path/to/my/template.tmpl
+  revive:
+    rules:
+      - name: exported
+        arguments:
+          - disableStutteringCheck
 
 linters:
   enable-all: true
@@ -87,3 +92,6 @@ issues:
     - linters:
         - gosec
       text: "G[501]"
+  include:
+    - EXC0012  # EXC0012 revive: Annoying issue about not having a comment. The rare codebase has such comments
+    - EXC0014  # EXC0014 revive: Annoying issue about not having a comment. The rare codebase has such comments

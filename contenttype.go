@@ -24,11 +24,12 @@ import (
 	"strings"
 )
 
+// MIME types for handling request/response body
 const (
+	ApplicationXML     = "application/xml"
 	ApplicationXHTML   = "application/xhtml+xml"
 	ApplicationJSON    = "application/json"
 	ApplicationJSONExt = "application/json; charset=utf-8"
-	ApplicationXML     = "application/xml"
 	ApplicationFormURL = "application/x-www-form-urlencoded"
 	TextPlain          = "text/plain"
 	TextHTML           = "text/html"
