@@ -26,7 +26,7 @@ import (
 	"github.com/enverbisevac/render"
 )
 
-func TestData(t *testing.T) {
+func TestBlob(t *testing.T) {
 	var (
 		buffer []byte
 		status int
@@ -104,6 +104,21 @@ func TestData(t *testing.T) {
 				w:      writer,
 				v:      []byte("Some content"),
 				params: []interface{}{http.StatusCreated, render.ContentTypeHeader, render.ApplicationJSON},
+			},
+			status:  http.StatusCreated,
+			content: []byte("Some content"),
+			header: http.Header{
+				render.ContentTypeHeader: []string{render.ApplicationJSON},
+			},
+		},
+		{
+			name: "happy path - http.Header as argument",
+			args: args{
+				w: writer,
+				v: []byte("Some content"),
+				params: []interface{}{http.StatusCreated, http.Header{
+					render.ContentTypeHeader: []string{render.ApplicationJSON},
+				}},
 			},
 			status:  http.StatusCreated,
 			content: []byte("Some content"),

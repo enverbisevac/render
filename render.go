@@ -27,6 +27,7 @@ import (
 	"net/http"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -94,8 +95,15 @@ func Render(w http.ResponseWriter, r *http.Request, v interface{}, params ...int
 // Blob(w, v)
 // Blob(w, v, http.StatusOK)
 // Blob(w, v, http.StatusOK, "Content-Type", "application/json")
+// or using constants ContentTypeHeader and ApplicationJSON
+// Blob(w, v, http.StatusOK, "Content-Type", "application/json")
 // Blob(w, v, "Content-Type", "application/json")
 // Blob(w, v, "Content-Type", "application/json", http.StatusOK)
+// you can pass http.Header struct
+//
+//	Blob(w, v, http.Header{
+//		 "Content-Type": []string{"application/json"},
+//	}, http.StatusOK)
 //
 // the order of the parameters does not matter.
 func Blob(w http.ResponseWriter, v []byte, params ...interface{}) {
@@ -111,6 +119,10 @@ func Blob(w http.ResponseWriter, v []byte, params ...interface{}) {
 				// when status is set and there are more int values in params
 				// ignore all values
 				status = arg
+			}
+		case http.Header:
+			for key, values := range arg {
+				w.Header().Set(key, strings.Join(values, ","))
 			}
 		case string:
 			if key == "" {
