@@ -279,13 +279,13 @@ func Stream(w http.ResponseWriter, r *http.Request, v interface{}) {
 
 			bytes, err := json.Marshal(v)
 			if err != nil {
-				w.Write([]byte(fmt.Sprintf("event: error\ndata: {\"error\":\"%v\"}\n\n", err))) //nolint:errcheck
+				fmt.Fprintf(w, "event: error\ndata: {\"error\":\"%v\"}\n\n", err)
 				if f, ok := w.(http.Flusher); ok {
 					f.Flush()
 				}
 				continue
 			}
-			w.Write([]byte(fmt.Sprintf("event: data\ndata: %s\n\n", bytes))) //nolint:errcheck
+			fmt.Fprintf(w, "event: data\ndata: %s\n\n", bytes)
 			if f, ok := w.(http.Flusher); ok {
 				f.Flush()
 			}
