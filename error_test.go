@@ -24,6 +24,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"testing"
 
 	"github.com/enverbisevac/render"
@@ -35,6 +36,15 @@ func TestError(t *testing.T) {
 		status int
 		header http.Header
 	)
+
+	req := func() *http.Request {
+		return &http.Request{
+			URL: &url.URL{},
+			Header: http.Header{
+				render.AcceptHeader: []string{render.ApplicationJSON},
+			},
+		}
+	}
 
 	jsonEncoder := func(msg string) []byte {
 		resErr := render.ErrorResponse{
@@ -78,12 +88,8 @@ func TestError(t *testing.T) {
 		{
 			name: "default error 500 - Internal Server Error",
 			args: args{
-				w: writer,
-				r: &http.Request{
-					Header: http.Header{
-						render.AcceptHeader: []string{render.ApplicationJSON},
-					},
-				},
+				w:   writer,
+				r:   req(),
 				err: errors.New("some error"),
 			},
 			body:   jsonEncoder("some error"),
@@ -92,12 +98,8 @@ func TestError(t *testing.T) {
 		{
 			name: "default mapped error 404 - file not found",
 			args: args{
-				w: writer,
-				r: &http.Request{
-					Header: http.Header{
-						render.AcceptHeader: []string{render.ApplicationJSON},
-					},
-				},
+				w:   writer,
+				r:   req(),
 				err: fmt.Errorf("file %s %w", "demo.txt", render.ErrNotFound),
 			},
 			body:   jsonEncoder(fmt.Sprintf("file %s %v", "demo.txt", render.ErrNotFound)),
@@ -106,12 +108,8 @@ func TestError(t *testing.T) {
 		{
 			name: "set optional param to BadRequest status",
 			args: args{
-				w: writer,
-				r: &http.Request{
-					Header: http.Header{
-						render.AcceptHeader: []string{render.ApplicationJSON},
-					},
-				},
+				w:      writer,
+				r:      req(),
 				err:    errors.New("bad input data"),
 				params: []interface{}{http.StatusBadRequest},
 			},
@@ -122,11 +120,7 @@ func TestError(t *testing.T) {
 			name: "provide http error",
 			args: args{
 				w: writer,
-				r: &http.Request{
-					Header: http.Header{
-						render.AcceptHeader: []string{render.ApplicationJSON},
-					},
-				},
+				r: req(),
 				err: &render.HTTPError{
 					Err:    errors.New("conflict data"),
 					Status: http.StatusConflict,
@@ -139,11 +133,7 @@ func TestError(t *testing.T) {
 			name: "provide map error, http error and param status should return param status",
 			args: args{
 				w: writer,
-				r: &http.Request{
-					Header: http.Header{
-						render.AcceptHeader: []string{render.ApplicationJSON},
-					},
-				},
+				r: req(),
 				err: &render.HTTPError{
 					Err:    render.ErrForbidden,
 					Status: http.StatusBadGateway,

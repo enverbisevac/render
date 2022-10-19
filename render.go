@@ -72,7 +72,7 @@ func DefaultXMLEncoder(w io.Writer) Encoder {
 // DefaultResponder handles streaming JSON and XML responses, automatically setting the
 // Content-Type based on request headers. It will default to a JSON response.
 func DefaultResponder(w http.ResponseWriter, r *http.Request, v interface{}, params ...interface{}) {
-	if v != nil && reflect.TypeOf(v).Kind() == reflect.Chan {
+	if reflect.TypeOf(v).Kind() == reflect.Chan {
 		v = channelIntoSlice(w, r, v)
 	}
 
@@ -146,10 +146,6 @@ func Blob(w http.ResponseWriter, v []byte, params ...interface{}) {
 				// ignore all values
 				status = arg
 			}
-		case http.Header:
-			for key, values := range arg {
-				w.Header().Set(key, strings.Join(values, ","))
-			}
 		case string:
 			if key == "" {
 				key = arg
@@ -161,11 +157,17 @@ func Blob(w http.ResponseWriter, v []byte, params ...interface{}) {
 				w.Header().Set(key, value)
 				key, value = "", ""
 			}
+		case http.Header:
+			for key, values := range arg {
+				w.Header().Set(key, strings.Join(values, ","))
+			}
 		}
 	}
+
 	if status == 0 {
 		status = http.StatusOK
 	}
+
 	w.WriteHeader(status)
 	w.Write(v) //nolint:errcheck
 }

@@ -31,6 +31,10 @@ type User struct {
 	Name string `json:"name"`
 }
 
+func init() {
+	render.PaginationInHeader = false
+}
+
 func helloHandler(w http.ResponseWriter, r *http.Request) {
 	paths := strings.Split(r.URL.Path, "/")
 	name := paths[len(paths)-1]
@@ -47,6 +51,24 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	render.Render(w, r, user)
+}
+
+func dumbLoader(limit, offset int, total *int) []User {
+	*total = 100
+	return []User{
+		{
+			"Enver",
+		},
+		{
+			"Joe",
+		},
+	}
+}
+
+func listUsers(w http.ResponseWriter, r *http.Request) {
+	pagination := render.PaginationFromRequest(r)
+	data := dumbLoader(pagination.Size(), pagination.Page(), &pagination.Total)
+	pagination.Render(w, r, data)
 }
 
 func errorHandler(w http.ResponseWriter, r *http.Request) {
@@ -78,6 +100,7 @@ func errorHandler4(w http.ResponseWriter, r *http.Request) {
 func main() {
 	http.HandleFunc("/hello/", helloHandler)
 	http.HandleFunc("/create", createUser)
+	http.HandleFunc("/users", listUsers)
 	http.HandleFunc("/error", errorHandler)
 	http.HandleFunc("/error1", errorHandler1)
 	http.HandleFunc("/error2", errorHandler2)
