@@ -1,3 +1,22 @@
+// Copyright (c) 2022 Enver Bisevac
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy of
+// this software and associated documentation files (the "Software"), to deal in
+// the Software without restriction, including without limitation the rights to
+// use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+// the Software, and to permit persons to whom the Software is furnished to do so,
+// subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+// FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+// COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+// IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+// CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 package render
 
 import (
@@ -7,14 +26,21 @@ import (
 )
 
 var (
-	PageParam          = "page"
-	PerPageParam       = "per_page"
-	PerPageDefault     = 25
-	Linkf              = `<%s>; rel="%s"`
+	// PageParam is query name param for current page
+	PageParam = "page"
+	// PerPageParam is number of items per page
+	PerPageParam = "per_page"
+	// PerPageDefault sets default number of items on response
+	PerPageDefault = 25
+	// Linkf is format for Link headers
+	Linkf = `<%s>; rel="%s"`
+	// PaginationInHeader write pagination in header
 	PaginationInHeader = true
-	PaginationBody     = DefaultPaginationBody
+	// PaginationBody generates pagination in body
+	PaginationBody = DefaultPaginationBody
 )
 
+// Pagination holds all page related data
 type Pagination struct {
 	page  int
 	size  int
@@ -24,26 +50,32 @@ type Pagination struct {
 	Total int
 }
 
+// Page returns non exported page value
 func (p Pagination) Page() int {
 	return p.page
 }
 
+// Size returns size (per_page) value
 func (p Pagination) Size() int {
 	return p.size
 }
 
+// Prev returns previous page
 func (p Pagination) Prev() int {
 	return p.prev
 }
 
+// Next returns next page
 func (p Pagination) Next() int {
 	return p.next
 }
 
+// Last returns last page
 func (p Pagination) Last() int {
 	return p.last
 }
 
+// Render renders payload and respond to the client request.
 func (p Pagination) Render(w http.ResponseWriter, r *http.Request, v interface{}, params ...interface{}) {
 	redirect := false
 	if p.page == 0 {
@@ -55,10 +87,12 @@ func (p Pagination) Render(w http.ResponseWriter, r *http.Request, v interface{}
 		redirect = true
 	}
 
-	// if p.page > p.last {
-	// 	p.page = p.last
-	// 	redirect = true
-	// }
+	p.last = totalPages(p.size, p.Total)
+
+	if p.page > p.last {
+		p.page = p.last
+		redirect = true
+	}
 
 	if redirect {
 		uri := *r.URL
@@ -72,7 +106,6 @@ func (p Pagination) Render(w http.ResponseWriter, r *http.Request, v interface{}
 		return
 	}
 
-	p.last = totalPages(p.size, p.Total)
 	p.next = min(p.page+1, p.last)
 	p.prev = max(p.page-1, 1)
 
@@ -85,6 +118,7 @@ func (p Pagination) Render(w http.ResponseWriter, r *http.Request, v interface{}
 	Render(w, r, v, params...)
 }
 
+// DefaultPaginationBody returns custom pagination body
 func DefaultPaginationBody(r *http.Request, p Pagination, v interface{}) interface{} {
 	var (
 		next string
@@ -134,6 +168,8 @@ func DefaultPaginationBody(r *http.Request, p Pagination, v interface{}) interfa
 	}
 }
 
+// PaginationFromRequest loads data from url like:
+// per_page, page etc.
 func PaginationFromRequest(r *http.Request) Pagination {
 	queryParams := r.URL.Query()
 	strPage := queryParams.Get(PageParam)
