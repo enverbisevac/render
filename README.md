@@ -80,6 +80,24 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 	render.Render(w, r, user)
 }
 
+func dumbLoader(limit, offset int, total *int) []User {
+	*total = 100
+	return []User{
+		{
+			"Enver",
+		},
+		{
+			"Joe",
+		},
+	}
+}
+
+func listUsers(w http.ResponseWriter, r *http.Request) {
+	pagination := render.PaginationFromRequest(r)
+	data := dumbLoader(pagination.Size(), pagination.Page(), &pagination.Total)
+	pagination.Render(w, r, data)
+}
+
 func errorHandler(w http.ResponseWriter, r *http.Request) {
 	render.Error(w, r, render.ErrNotFound)
 }
@@ -94,7 +112,7 @@ func main() {
 
 ## API Reference
 
-#### Bind request body to data type `v`
+### Bind request body to data type `v`
 
 ```go
   func Bind(r *http.Request, v interface{}) error
@@ -107,7 +125,7 @@ func main() {
 
 error will be returned if binding fails
 
-#### Render responses based on request `r` headers
+### Render responses based on request `r` headers
 
 ```go
   func Render(w http.ResponseWriter, r *http.Request, v interface{}, params ...interface{})
@@ -120,7 +138,7 @@ error will be returned if binding fails
 | `v`       | `interface{}`         | **Required**. Pointer to variable.                  |
 | `params`  | `...interface{}`      | Variadic number of params. (int/string/http.Header) |
 
-#### Render error response and status code based on request `r` headers
+### Render error response and status code based on request `r` headers
 
 ```go
   func Error(w http.ResponseWriter, r *http.Request, err error, params ...interface{})
@@ -133,7 +151,7 @@ error will be returned if binding fails
 | `err`     | `error`.              | **Required**. Error value.                          |
 | `params`  | `...interface{}`      | Variadic number of params. (int/string/http.Header) |
 
-#### Params variadic function parameter
+### Params variadic function parameter
 
 `params` can be found in almost any function. Param type can be string, http.Header or integer.
 Integer value represent status code. String or http.header are just for response headers.
@@ -150,7 +168,7 @@ render.Render(w, v, http.Header{
 }, http.StatusOK)
 ```
 
-#### Integrate 3rd party JSON/XML lib
+### Integrate 3rd party JSON/XML lib
 
 in this example we will replace standard encoder with goccy/go-json.
 
@@ -175,7 +193,47 @@ func init() {
 }
 ```
 
-#### Other functions
+### Pagination
+
+pagination API function `PaginationFromRequest` accepts single parameter of type \*http.Request
+and returns `Pagination` object.
+
+```go
+pagination := render.PaginationFromRequest(r)
+```
+
+pagination struct contains several read only fields:
+
+```go
+type Pagination struct {
+	page  int
+	size  int
+	prev  int
+	next  int
+	last  int
+	Total int
+}
+```
+
+only field you can modify is Total field. Query values are mapped to pagination object:
+
+```
+http://localhost:3000/users?page=1&per_page=10
+```
+
+then you can process your input pagination data:
+
+```go
+data := loadUsers(pagination.Size(), pagination.Page(), &pagination.Total)
+```
+
+when we have data then we can render output:
+
+```go
+pagination.Render(w, r, data)
+```
+
+### Other API functions
 
 ```go
 func Blob(w http.ResponseWriter, v []byte, params ...interface{})

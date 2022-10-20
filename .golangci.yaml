@@ -55,6 +55,23 @@ linters-settings:
       - name: exported
         arguments:
           - disableStutteringCheck
+  tagliatelle:
+    # Check the struck tag name case.
+    case:
+      # Use the struct field name to check the name of the struct tag.
+      # Default: false
+      use-field-name: true
+      # `camel` is used for `json` and `yaml` (can be overridden)
+      # Default: {}
+      rules:
+        # Any struct tag type can be used.
+        # Support string case: `camel`, `pascal`, `kebab`, `snake`, `goCamel`, `goPascal`, `goKebab`, `goSnake`, `upper`, `lower`
+        json: snake
+        yaml: snake
+        xml: snake
+        bson: snake
+        avro: snake
+        mapstructure: snake
 
 linters:
   enable-all: true
