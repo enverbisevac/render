@@ -233,7 +233,7 @@ when we have data then we can render output:
 pagination.Render(w, r, data)
 ```
 
-Render output can be placed in headers or body of the request, default one is header,
+Render output can be placed in headers or body of the response, default one is header,
 this setting can be changed by package variable at init function of your project.
 List of package variables can be set:
 
