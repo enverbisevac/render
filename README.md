@@ -233,6 +233,27 @@ when we have data then we can render output:
 pagination.Render(w, r, data)
 ```
 
+Render output can be placed in headers or body of the request, default one is header,
+this setting can be changed by package variable at init function of your project.
+List of package variables can be set:
+
+```go
+var (
+	// PageParam is query name param for current page
+	PageParam = "page"
+	// PerPageParam is number of items per page
+	PerPageParam = "per_page"
+	// PerPageDefault sets default number of items on response
+	PerPageDefault = 25
+	// Linkf is format for Link headers
+	Linkf = `<%s>; rel="%s"`
+	// PaginationInHeader write pagination in header
+	PaginationInHeader = true
+	// PaginationBody generates pagination in body
+	PaginationBody = DefaultPaginationBody
+)
+```
+
 ### Other API functions
 
 ```go
