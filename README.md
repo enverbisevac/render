@@ -273,7 +273,7 @@ more help on API can be found in Documentation.
 
 ## Documentation
 
-[Documentation](https://linktodocumentation)
+[Documentation](https://pkg.go.dev/github.com/enverbisevac/render#section-documentation)
 
 ## FAQ
 
