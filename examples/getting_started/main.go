@@ -28,7 +28,7 @@ import (
 )
 
 type User struct {
-	Name string `json:"name"`
+	Name string `json:"name" xml:"name"`
 }
 
 func init() {

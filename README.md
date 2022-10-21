@@ -31,8 +31,9 @@ All feedback is welcome, thank you!
 ## Features
 
 - Very simple API
-- Render based on Accept header
+- Render based on Accept header or format query parameter
 - Custom render functions JSON, XML, PlainText ...
+- Header or body pagination response
 - Map of defaults error and statusCode
 - Customizable error handling
 - Easy decoding request body based on content type

@@ -45,6 +45,14 @@ const (
 // differently, or log something before you respond.
 var Respond = DefaultResponder
 
+var formats = map[string][]string{
+	"txt":    {TextPlain},
+	"json":   {ApplicationJSON},
+	"xml":    {ApplicationXML},
+	"html":   {TextHTML},
+	"stream": {TextEventStream},
+}
+
 // Encoder provide method for encoding reader data
 type Encoder interface {
 	Encode(v interface{}) error
@@ -70,8 +78,13 @@ func DefaultXMLEncoder(w io.Writer) Encoder {
 }
 
 // DefaultResponder handles streaming JSON and XML responses, automatically setting the
-// Content-Type based on request headers. It will default to a JSON response.
+// Content-Type based on request headers or query param `format`. Default content type is JSON.
 func DefaultResponder(w http.ResponseWriter, r *http.Request, v interface{}, params ...interface{}) {
+	format, ok := formats[r.URL.Query().Get("format")]
+	if ok {
+		r.Header.Set(AcceptHeader, strings.Join(format, ","))
+	}
+
 	if reflect.TypeOf(v).Kind() == reflect.Chan {
 		v = channelIntoSlice(w, r, v)
 	}
