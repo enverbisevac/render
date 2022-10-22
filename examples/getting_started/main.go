@@ -71,6 +71,13 @@ func listUsers(w http.ResponseWriter, r *http.Request) {
 	pagination.Render(w, r, data)
 }
 
+func plainTextTemplate(w http.ResponseWriter, r *http.Request) {
+	user := User{
+		Name: "Enver",
+	}
+	render.Render(w, r, user, "Hello {{.Name}}")
+}
+
 func errorHandler(w http.ResponseWriter, r *http.Request) {
 	render.Error(w, r, render.ErrNotFound)
 }
@@ -101,6 +108,7 @@ func main() {
 	http.HandleFunc("/hello/", helloHandler)
 	http.HandleFunc("/create", createUser)
 	http.HandleFunc("/users", listUsers)
+	http.HandleFunc("/plain", plainTextTemplate)
 	http.HandleFunc("/error", errorHandler)
 	http.HandleFunc("/error1", errorHandler1)
 	http.HandleFunc("/error2", errorHandler2)

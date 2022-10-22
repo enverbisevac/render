@@ -24,11 +24,13 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	html "html/template"
 	"io"
 	"net/http"
 	"reflect"
 	"strconv"
 	"strings"
+	"text/template"
 )
 
 // Header names used in request/response
@@ -92,11 +94,7 @@ func DefaultResponder(w http.ResponseWriter, r *http.Request, v interface{}, par
 	// Format response based on request Accept header.
 	switch GetAcceptedContentType(r) {
 	case ContentTypePlainText, ContentTypeUnknown:
-		str, ok := v.(string)
-		if !ok {
-			str = fmt.Sprintf("%s", v)
-		}
-		PlainText(w, str, params...)
+		PlainText(w, v, params...)
 	case ContentTypeJSON:
 		JSON(w, v, params...)
 	case ContentTypeXML:
@@ -187,13 +185,122 @@ func Blob(w http.ResponseWriter, v []byte, params ...interface{}) {
 
 // PlainText writes a string to the response, setting the Content-Type as
 // text/plain.
-func PlainText(w http.ResponseWriter, v string, params ...interface{}) {
-	Blob(w, []byte(v), append(params, ContentTypeHeader, "text/plain; charset=utf-8")...)
+func PlainText(w http.ResponseWriter, v interface{}, params ...interface{}) {
+	var (
+		t         *template.Template
+		tmpl      string
+		buf       bytes.Buffer
+		err       error
+		newParams = make([]interface{}, 0, len(params))
+	)
+	switch value := v.(type) {
+	case string:
+		_, _ = buf.WriteString(value)
+	case *string:
+		if value != nil {
+			_, _ = buf.WriteString(*value)
+		}
+	default:
+		// check params for template input
+		for _, param := range params {
+			switch value := param.(type) {
+			case string:
+				if tmpl == "" {
+					tmpl = value
+				}
+			case *string:
+				if tmpl == "" {
+					tmpl = *value
+				}
+			case *template.Template:
+				if t == nil {
+					t = value
+				}
+			default:
+				newParams = append(newParams, value)
+			}
+		}
+	}
+
+	if t != nil && tmpl != "" {
+		if strings.HasPrefix(tmpl, "tmpl://") {
+			err = t.ExecuteTemplate(&buf, strings.Replace(tmpl, "tmpl://", "", 1), v)
+		} else if t, err = t.Parse(tmpl); err == nil {
+			err = t.Execute(&buf, v)
+		}
+	} else if tmpl != "" {
+		if t, err = template.New("plaintext").Funcs(TemplateFuncs).Parse(tmpl); err == nil {
+			err = t.Execute(&buf, v)
+		}
+	} else {
+		_, _ = buf.WriteString(fmt.Sprintf("%v", v))
+	}
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	Blob(w, buf.Bytes(), append(newParams, ContentTypeHeader, "text/plain; charset=utf-8")...)
 }
 
 // HTML writes a string to the response, setting the Content-Type as text/html.
-func HTML(w http.ResponseWriter, v string, params ...interface{}) {
-	Blob(w, []byte(v), append(params, ContentTypeHeader, "text/html; charset=utf-8")...)
+func HTML(w http.ResponseWriter, v interface{}, params ...interface{}) {
+	var (
+		t         *html.Template
+		tmpl      string
+		buf       bytes.Buffer
+		err       error
+		newParams = make([]interface{}, 0, len(params))
+	)
+	switch value := v.(type) {
+	case string:
+		_, _ = buf.WriteString(value)
+	case *string:
+		if value != nil {
+			_, _ = buf.WriteString(*value)
+		}
+	default:
+		// check params for template input
+		for _, param := range params {
+			switch value := param.(type) {
+			case string:
+				if tmpl == "" {
+					tmpl = value
+				}
+			case *string:
+				if tmpl == "" {
+					tmpl = *value
+				}
+			case *html.Template:
+				if t == nil {
+					t = value
+				}
+			default:
+				newParams = append(newParams, value)
+			}
+		}
+	}
+
+	if t != nil && tmpl != "" {
+		if strings.HasPrefix(tmpl, "tmpl://") {
+			err = t.ExecuteTemplate(&buf, strings.Replace(tmpl, "tmpl://", "", 1), v)
+		} else if t, err = t.Parse(tmpl); err == nil {
+			err = t.Execute(&buf, v)
+		}
+	} else if tmpl != "" {
+		if t, err = html.New("html").Funcs(TemplateFuncs).Parse(tmpl); err == nil {
+			err = t.Execute(&buf, v)
+		}
+	} else {
+		_, _ = buf.WriteString(fmt.Sprintf("%v", v))
+	}
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	Blob(w, buf.Bytes(), append(newParams, ContentTypeHeader, "text/html; charset=utf-8")...)
 }
 
 // JSON marshals 'v' to JSON, automatically escaping HTML and setting the
