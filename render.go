@@ -92,11 +92,7 @@ func DefaultResponder(w http.ResponseWriter, r *http.Request, v interface{}, par
 	// Format response based on request Accept header.
 	switch GetAcceptedContentType(r) {
 	case ContentTypePlainText, ContentTypeUnknown:
-		str, ok := v.(string)
-		if !ok {
-			str = fmt.Sprintf("%s", v)
-		}
-		PlainText(w, str, params...)
+		PlainText(w, v, params...)
 	case ContentTypeJSON:
 		JSON(w, v, params...)
 	case ContentTypeXML:
@@ -187,13 +183,13 @@ func Blob(w http.ResponseWriter, v []byte, params ...interface{}) {
 
 // PlainText writes a string to the response, setting the Content-Type as
 // text/plain.
-func PlainText(w http.ResponseWriter, v string, params ...interface{}) {
-	Blob(w, []byte(v), append(params, ContentTypeHeader, "text/plain; charset=utf-8")...)
+func PlainText(w http.ResponseWriter, v interface{}, params ...interface{}) {
+	templateFactory(w, newTemplateWrapper("text"), v, "text/plain; charset=utf-8", params...)
 }
 
 // HTML writes a string to the response, setting the Content-Type as text/html.
-func HTML(w http.ResponseWriter, v string, params ...interface{}) {
-	Blob(w, []byte(v), append(params, ContentTypeHeader, "text/html; charset=utf-8")...)
+func HTML(w http.ResponseWriter, v interface{}, params ...interface{}) {
+	templateFactory(w, newTemplateWrapper("html"), v, "text/html; charset=utf-8", params...)
 }
 
 // JSON marshals 'v' to JSON, automatically escaping HTML and setting the
