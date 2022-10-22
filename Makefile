@@ -27,6 +27,14 @@ lint: $(GOPATH)/bin/golangci-lint ## Run golangci-lint
 test: ## Run unit tests with coverage
 	@go test -v -race -coverprofile=coverage.out -covermode=atomic
 
+.PHONY: coverage
+coverage: test
+	@go tool cover -func=coverage.out
+
+.PHONY: coverage-html
+coverage-html: test
+	@go tool cover -html=coverage.out
+
 ##################################################
 # tools managment rules
 ##################################################
