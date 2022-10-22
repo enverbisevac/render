@@ -55,7 +55,6 @@ var TemplateFuncs = template.FuncMap{
 	"lowercase": strings.ToLower,
 	"pluralize": pluralize,
 	"slugify":   slugify,
-	"safeHTML":  safeHTML,
 
 	// Slice functions
 	"join": strings.Join,
@@ -150,10 +149,6 @@ func slugify(s string) string {
 	}
 
 	return buf.String()
-}
-
-func safeHTML(s string) template.HTML {
-	return template.HTML(s)
 }
 
 func incr(i interface{}) (int64, error) {
