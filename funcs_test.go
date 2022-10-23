@@ -354,7 +354,48 @@ func Test_slugify(t *testing.T) {
 		args args
 		want string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "happy path, dash",
+			args: args{
+				s: "open-article",
+			},
+			want: "open-article",
+		},
+		{
+			name: "happy path, lower dash",
+			args: args{
+				s: "open_article",
+			},
+			want: "open_article",
+		},
+		{
+			name: "happy path, digit",
+			args: args{
+				s: "open_article1",
+			},
+			want: "open_article1",
+		},
+		{
+			name: "happy path, uppercase",
+			args: args{
+				s: "Open",
+			},
+			want: "open",
+		},
+		{
+			name: "happy path, space",
+			args: args{
+				s: "open article",
+			},
+			want: "open-article",
+		},
+		{
+			name: "happy path, maxascii",
+			args: args{
+				s: "open ♄ article",
+			},
+			want: "open--article",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -375,7 +416,102 @@ func Test_toInt64(t *testing.T) {
 		want    int64
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "happy path - int",
+			args: args{
+				i: 10,
+			},
+			want:    int64(10),
+			wantErr: false,
+		},
+		{
+			name: "happy path - int8",
+			args: args{
+				i: int8(10),
+			},
+			want:    int64(10),
+			wantErr: false,
+		},
+		{
+			name: "happy path - int16",
+			args: args{
+				i: int16(10),
+			},
+			want:    int64(10),
+			wantErr: false,
+		},
+		{
+			name: "happy path - int32",
+			args: args{
+				i: int32(10),
+			},
+			want:    int64(10),
+			wantErr: false,
+		},
+		{
+			name: "happy path - int64",
+			args: args{
+				i: int64(10),
+			},
+			want:    int64(10),
+			wantErr: false,
+		},
+		{
+			name: "happy path - uint",
+			args: args{
+				i: uint(10),
+			},
+			want:    int64(10),
+			wantErr: false,
+		},
+		{
+			name: "happy path - uint8",
+			args: args{
+				i: uint8(10),
+			},
+			want:    int64(10),
+			wantErr: false,
+		},
+		{
+			name: "happy path - uint16",
+			args: args{
+				i: uint16(10),
+			},
+			want:    int64(10),
+			wantErr: false,
+		},
+		{
+			name: "happy path - uint32",
+			args: args{
+				i: uint32(10),
+			},
+			want:    int64(10),
+			wantErr: false,
+		},
+		{
+			name: "happy path - string",
+			args: args{
+				i: "10",
+			},
+			want:    int64(10),
+			wantErr: false,
+		},
+		{
+			name: "string, illegal argument",
+			args: args{
+				i: "10a",
+			},
+			want:    0,
+			wantErr: true,
+		},
+		{
+			name: "uint64, illegal argument",
+			args: args{
+				i: uint64(10),
+			},
+			want:    0,
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -396,20 +532,28 @@ func Test_urlDelParam(t *testing.T) {
 		u   *url.URL
 		key string
 	}
-	tests := []struct {
-		name string
+	test := struct {
 		args args
 		want *url.URL
 	}{
-		// TODO: Add test cases.
+		args: args{
+			u: &url.URL{
+				Scheme:   "http",
+				Host:     "localhost",
+				RawQuery: "query=test",
+			},
+			key: "query",
+		},
+		want: &url.URL{
+			Scheme:   "http",
+			Host:     "localhost",
+			RawQuery: "",
+		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := urlDelParam(tt.args.u, tt.args.key); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("urlDelParam() = %v, want %v", got, tt.want)
-			}
-		})
+	if got := urlDelParam(test.args.u, test.args.key); !reflect.DeepEqual(got, test.want) {
+		t.Errorf("urlDelParam() = %v, want %v", got, test.want)
 	}
+
 }
 
 func Test_urlSetParam(t *testing.T) {
@@ -419,12 +563,9 @@ func Test_urlSetParam(t *testing.T) {
 		value interface{}
 	}
 	test := struct {
-		name string
 		args args
 		want *url.URL
 	}{
-
-		name: "happy path",
 		args: args{
 			u: &url.URL{
 				Scheme: "http",
