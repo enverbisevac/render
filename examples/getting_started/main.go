@@ -53,8 +53,7 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 	render.Render(w, r, user)
 }
 
-func dumbLoader(limit, offset int, total *int) []User {
-	*total = 100
+func dumbLoader(limit, offset int) []User {
 	return []User{
 		{
 			"Enver",
@@ -66,8 +65,8 @@ func dumbLoader(limit, offset int, total *int) []User {
 }
 
 func listUsers(w http.ResponseWriter, r *http.Request) {
-	pagination := render.PaginationFromRequest(r)
-	data := dumbLoader(pagination.PerPage(), pagination.Page(), &pagination.Total)
+	pagination := render.PaginationFromRequest(r, 100)
+	data := dumbLoader(pagination.PerPage(), pagination.Page())
 	pagination.Render(w, r, data)
 }
 

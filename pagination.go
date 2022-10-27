@@ -58,21 +58,33 @@ var (
 	PaginationBody = DefaultPaginationBody
 )
 
-// Pagination holds all page related data
+// Pagination holds all page related data.
 type Pagination struct {
 	url     *url.URL
 	page    int
 	perPage int
-	Total   int
+	last    int
+	total   int
+}
+
+// PaginationOption is prototype for functional options.
+type PaginationOption func(p *Pagination)
+
+// WithPerPage set perPage value.
+func WithPerPage(val int) PaginationOption {
+	return func(p *Pagination) {
+		p.perPage = val
+		p.last = totalPages(p.perPage, p.total)
+	}
 }
 
 // PaginationFromRequest returns pagination object from parsed request url field
-func PaginationFromRequest(r *http.Request) Pagination {
-	return NewPagination(r.URL)
+func PaginationFromRequest(r *http.Request, totalItems int, options ...PaginationOption) Pagination {
+	return NewPagination(r.URL, totalItems, options...)
 }
 
-// NewPagination parses url and return new pagination object
-func NewPagination(url *url.URL) Pagination {
+// NewPagination parses url and return new pagination object.
+func NewPagination(url *url.URL, totalItems int, options ...PaginationOption) Pagination {
 	queryParams := url.Query()
 	strPage := queryParams.Get(PageParam)
 	strPerPage := queryParams.Get(PerPageParam)
@@ -86,11 +98,21 @@ func NewPagination(url *url.URL) Pagination {
 		perPage = PerPageDefault
 	}
 
-	return Pagination{
+	last := totalPages(perPage, totalItems)
+
+	pagination := Pagination{
 		url:     url,
 		page:    page,
 		perPage: perPage,
+		last:    last,
+		total:   totalItems,
 	}
+
+	for _, option := range options {
+		option(&pagination)
+	}
+
+	return pagination
 }
 
 // URL returns non exported page value
@@ -133,7 +155,7 @@ func (p Pagination) PrevURL() string {
 
 // Next page
 func (p Pagination) Next() int {
-	return min(p.page+1, p.Last())
+	return min(p.page+1, p.last)
 }
 
 // NextURL page
@@ -145,7 +167,7 @@ func (p Pagination) NextURL() string {
 	params.Set(PageParam, strconv.Itoa(p.page))
 	params.Set(PerPageParam, strconv.Itoa(p.perPage))
 
-	if p.page != p.Last() {
+	if p.page != p.last {
 		params.Set(PageParam, strconv.Itoa(p.Next()))
 		p.url.RawQuery = params.Encode()
 
@@ -156,10 +178,7 @@ func (p Pagination) NextURL() string {
 
 // Last page
 func (p Pagination) Last() int {
-	if p.Total <= 0 {
-		return 0
-	}
-	return totalPages(p.perPage, p.Total)
+	return p.last
 }
 
 // LastURL page
@@ -171,14 +190,14 @@ func (p Pagination) LastURL() string {
 	params.Set(PageParam, strconv.Itoa(p.page))
 	params.Set(PerPageParam, strconv.Itoa(p.perPage))
 
-	params.Set(PageParam, strconv.Itoa(p.Last()))
+	params.Set(PageParam, strconv.Itoa(p.last))
 	p.url.RawQuery = params.Encode()
 
 	return p.url.String()
 }
 
 func (p Pagination) shouldRedirect() bool {
-	last := p.Last()
+	last := p.last
 	switch {
 	case p.page == 0:
 		return true
@@ -192,7 +211,7 @@ func (p Pagination) shouldRedirect() bool {
 
 func (p Pagination) redirect(w http.ResponseWriter, r *http.Request) {
 	uri := *r.URL
-	last := p.Last()
+	last := p.last
 	page := p.page
 	perPage := p.perPage
 	if page == 0 {
@@ -233,7 +252,7 @@ func DefaultPaginationHeader(w http.ResponseWriter, p Pagination) {
 	w.Header().Set(PageHeader, strconv.Itoa(p.page))
 	w.Header().Set(PerPageHeader, strconv.Itoa(p.perPage))
 
-	last := p.Last()
+	last := p.last
 
 	if p.page != last {
 		w.Header().Set(NextPageHeader, strconv.Itoa(p.Next()))
@@ -245,7 +264,7 @@ func DefaultPaginationHeader(w http.ResponseWriter, p Pagination) {
 		w.Header().Add(LinkHeader, fmt.Sprintf(Linkf, p.PrevURL(), "prev"))
 	}
 
-	w.Header().Set(TotalItemsHeader, strconv.Itoa(p.Total))
+	w.Header().Set(TotalItemsHeader, strconv.Itoa(p.total))
 	w.Header().Set(TotalPagesHeader, strconv.Itoa(last))
 	w.Header().Add(LinkHeader, fmt.Sprintf(Linkf, p.LastURL(), "last"))
 }
@@ -265,7 +284,7 @@ func DefaultPaginationBody(p Pagination, v interface{}) interface{} {
 	return simpleBody{
 		Page:    p.page,
 		PerPage: p.perPage,
-		Total:   p.Total,
+		Total:   p.total,
 		Next:    p.NextURL(),
 		Prev:    p.PrevURL(),
 		Last:    p.LastURL(),

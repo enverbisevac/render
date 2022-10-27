@@ -39,7 +39,8 @@ func TestNewPagination(t *testing.T) {
 		return parse
 	}
 	type args struct {
-		url *url.URL
+		url        *url.URL
+		totalItems int
 	}
 	tests := []struct {
 		name string
@@ -49,51 +50,63 @@ func TestNewPagination(t *testing.T) {
 		{
 			name: "happy path",
 			args: args{
-				url: makeURL("http://localhost/users?page=1&per_page=20"),
+				url:        makeURL("http://localhost/users?page=1&per_page=20"),
+				totalItems: 100,
 			},
 			want: Pagination{
 				url:     makeURL("http://localhost/users?page=1&per_page=20"),
 				page:    1,
 				perPage: 20,
+				last:    5,
+				total:   100,
 			},
 		},
 		{
 			name: "no page in query should return page 1",
 			args: args{
-				url: makeURL("http://localhost/users?per_page=20"),
+				url:        makeURL("http://localhost/users?per_page=20"),
+				totalItems: 100,
 			},
 			want: Pagination{
 				url:     makeURL("http://localhost/users?per_page=20"),
 				page:    1,
 				perPage: 20,
+				last:    5,
+				total:   100,
 			},
 		},
 		{
 			name: "no per_page in query should return page default value",
 			args: args{
-				url: makeURL("http://localhost/users?page=1"),
+				url:        makeURL("http://localhost/users?page=1"),
+				totalItems: 100,
 			},
 			want: Pagination{
 				url:     makeURL("http://localhost/users?page=1"),
 				page:    1,
 				perPage: PerPageDefault,
+				last:    100 / PerPageDefault,
+				total:   100,
 			},
 		},
 		{
 			name: "no query params should return default values",
 			args: args{
-				url: makeURL("http://localhost/users"),
+				url:        makeURL("http://localhost/users"),
+				totalItems: 100,
 			},
 			want: Pagination{
 				url:     makeURL("http://localhost/users"),
 				page:    1,
 				perPage: PerPageDefault,
+				last:    100 / PerPageDefault,
+				total:   100,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewPagination(tt.args.url); !reflect.DeepEqual(got, tt.want) {
+			if got := NewPagination(tt.args.url, tt.args.totalItems); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewPagination() = %v, want %v", got, tt.want)
 			}
 		})
@@ -102,18 +115,15 @@ func TestNewPagination(t *testing.T) {
 
 func TestPagination_Last(t *testing.T) {
 	p := Pagination{
-		perPage: PerPageDefault,
-		Total:   100,
+		last: 10,
 	}
 
-	utest.Equals(t, 4, p.Last())
+	utest.Equals(t, 10, p.Last())
 }
 
 func TestPagination_Next(t *testing.T) {
 	p := Pagination{
-		page:    1,
-		perPage: PerPageDefault,
-		Total:   100,
+		page: 1,
 	}
 
 	utest.Equals(t, 2, p.Next())
@@ -129,9 +139,7 @@ func TestPagination_Page(t *testing.T) {
 
 func TestPagination_Prev(t *testing.T) {
 	p := Pagination{
-		page:    2,
-		perPage: PerPageDefault,
-		Total:   100,
+		page: 2,
 	}
 
 	utest.Equals(t, 1, p.Prev())
@@ -143,9 +151,7 @@ func TestDefaultPaginationHeader(t *testing.T) {
 		if err != nil {
 			return Pagination{}
 		}
-		pagination := NewPagination(_url)
-		pagination.perPage = size
-		pagination.Total = total
+		pagination := NewPagination(_url, total, WithPerPage(size))
 		return pagination
 	}
 	type args struct {
@@ -166,7 +172,7 @@ func TestDefaultPaginationHeader(t *testing.T) {
 			exp: map[string]string{
 				PageHeader:       "1",
 				PerPageHeader:    "20",
-				"x-next-page":    "2",
+				NextPageHeader:   "2",
 				PrevPageHeader:   "",
 				TotalItemsHeader: "100",
 				TotalPagesHeader: "5",
@@ -234,7 +240,7 @@ func TestPagination_Render(t *testing.T) {
 			p := Pagination{
 				page:    tt.fields.page,
 				perPage: tt.fields.size,
-				Total:   tt.fields.Total,
+				total:   tt.fields.Total,
 			}
 			p.Render(tt.args.w, tt.args.r, tt.args.v, tt.args.params...)
 		})
