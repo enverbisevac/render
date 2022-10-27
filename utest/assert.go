@@ -29,7 +29,7 @@ import (
 
 // Assert fails the test if the condition is false.
 //
-//nolint:unused,forbidigo
+//nolint:forbidigo
 func Assert(tb testing.TB, condition bool, msg string, v ...interface{}) {
 	tb.Helper()
 	if !condition {
@@ -41,7 +41,7 @@ func Assert(tb testing.TB, condition bool, msg string, v ...interface{}) {
 
 // OK fails the test if an err is not nil.
 //
-//nolint:unused,forbidigo
+//nolint:forbidigo
 func OK(tb testing.TB, err error) {
 	tb.Helper()
 	if err != nil {

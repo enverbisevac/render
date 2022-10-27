@@ -67,7 +67,7 @@ func dumbLoader(limit, offset int, total *int) []User {
 
 func listUsers(w http.ResponseWriter, r *http.Request) {
 	pagination := render.PaginationFromRequest(r)
-	data := dumbLoader(pagination.Size(), pagination.Page(), &pagination.Total)
+	data := dumbLoader(pagination.PerPage(), pagination.Page(), &pagination.Total)
 	pagination.Render(w, r, data)
 }
 

@@ -33,8 +33,23 @@ var (
 	PerPageParam = "per_page"
 	// PerPageDefault sets default number of items on response
 	PerPageDefault = 25
+	// PageHeader represents x-page key in header
+	PageHeader = "x-page"
+	// PerPageHeader represents x-per-page key in header
+	PerPageHeader = "x-per-page"
+	// NextPageHeader represents x-next key in header
+	NextPageHeader = "x-next-page"
+	// PrevPageHeader represents x-pprev key in header
+	PrevPageHeader = "x-prev-page"
+	// TotalItemsHeader represents x-total key in header
+	TotalItemsHeader = "x-total"
+	// TotalPagesHeader represents x-total-pages key in header
+	TotalPagesHeader = "x-total-pages"
+	// LinkHeader represents Link key in header
+	LinkHeader = "Link"
 	// Linkf is format for Link headers
 	Linkf = `<%s>; rel="%s"`
+
 	// PaginationInHeader write pagination in header
 	PaginationInHeader = true
 	// PaginationHeader generates pagination in header
@@ -45,15 +60,13 @@ var (
 
 // Pagination holds all page related data
 type Pagination struct {
-	url   *url.URL
-	page  int
-	size  int
-	prev  int
-	next  int
-	last  int
-	Total int
+	url     *url.URL
+	page    int
+	perPage int
+	Total   int
 }
 
+// PaginationFromRequest returns pagination object from parsed request url field
 func PaginationFromRequest(r *http.Request) Pagination {
 	return NewPagination(r.URL)
 }
@@ -68,15 +81,15 @@ func NewPagination(url *url.URL) Pagination {
 	if err != nil {
 		page = 1
 	}
-	size, err := strconv.Atoi(strPerPage)
+	perPage, err := strconv.Atoi(strPerPage)
 	if err != nil {
-		size = PerPageDefault
+		perPage = PerPageDefault
 	}
 
 	return Pagination{
-		url:  url,
-		page: page,
-		size: size,
+		url:     url,
+		page:    page,
+		perPage: perPage,
 	}
 }
 
@@ -90,156 +103,172 @@ func (p Pagination) Page() int {
 	return p.page
 }
 
-// Size returns size (per_page) value
-func (p Pagination) Size() int {
-	return p.size
+// PerPage returns perPage (per_page) value
+func (p Pagination) PerPage() int {
+	return p.perPage
 }
 
 // Prev page
 func (p Pagination) Prev() int {
-	return p.prev
+	return max(p.page-1, 1)
+}
+
+// PrevURL page
+func (p Pagination) PrevURL() string {
+	if p.url == nil {
+		return ""
+	}
+	params := p.url.Query()
+	params.Set(PageParam, strconv.Itoa(p.page))
+	params.Set(PerPageParam, strconv.Itoa(p.perPage))
+
+	if p.page > 1 {
+		params.Set(PageParam, strconv.Itoa(p.Prev()))
+		p.url.RawQuery = params.Encode()
+
+		return p.url.String()
+	}
+	return ""
 }
 
 // Next page
 func (p Pagination) Next() int {
-	return p.next
+	return min(p.page+1, p.Last())
+}
+
+// NextURL page
+func (p Pagination) NextURL() string {
+	if p.url == nil {
+		return ""
+	}
+	params := p.url.Query()
+	params.Set(PageParam, strconv.Itoa(p.page))
+	params.Set(PerPageParam, strconv.Itoa(p.perPage))
+
+	if p.page != p.Last() {
+		params.Set(PageParam, strconv.Itoa(p.Next()))
+		p.url.RawQuery = params.Encode()
+
+		return p.url.String()
+	}
+	return ""
 }
 
 // Last page
 func (p Pagination) Last() int {
-	return p.last
+	if p.Total <= 0 {
+		return 0
+	}
+	return totalPages(p.perPage, p.Total)
+}
+
+// LastURL page
+func (p Pagination) LastURL() string {
+	if p.url == nil {
+		return ""
+	}
+	params := p.url.Query()
+	params.Set(PageParam, strconv.Itoa(p.page))
+	params.Set(PerPageParam, strconv.Itoa(p.perPage))
+
+	params.Set(PageParam, strconv.Itoa(p.Last()))
+	p.url.RawQuery = params.Encode()
+
+	return p.url.String()
+}
+
+func (p Pagination) shouldRedirect() bool {
+	last := p.Last()
+	switch {
+	case p.page == 0:
+		return true
+	case p.page > last:
+		return true
+	case p.perPage == 0:
+		return true
+	}
+	return false
+}
+
+func (p Pagination) redirect(w http.ResponseWriter, r *http.Request) {
+	uri := *r.URL
+	last := p.Last()
+	page := p.page
+	perPage := p.perPage
+	if page == 0 {
+		page = 1
+	}
+	if page > last {
+		page = last
+	}
+	if perPage == 0 {
+		perPage = PerPageDefault
+	}
+	params := uri.Query()
+	params.Set(PageParam, strconv.Itoa(page))
+	params.Set(PerPageParam, strconv.Itoa(perPage))
+	uri.RawQuery = params.Encode()
+
+	http.Redirect(w, r, uri.String(), http.StatusMovedPermanently)
 }
 
 // Render renders payload and respond to the client request.
 func (p Pagination) Render(w http.ResponseWriter, r *http.Request, v interface{}, params ...interface{}) {
-	redirect := false
-	if p.page == 0 {
-		p.page = 1
-		redirect = true
-	}
-	if p.size == 0 {
-		p.size = PerPageDefault
-		redirect = true
-	}
-
-	p.last = totalPages(p.size, p.Total)
-
-	if p.page > p.last {
-		p.page = p.last
-		redirect = true
-	}
-
-	if redirect {
-		uri := *r.URL
-
-		params := uri.Query()
-		params.Set(PageParam, strconv.Itoa(p.page))
-		params.Set(PerPageParam, strconv.Itoa(p.size))
-		uri.RawQuery = params.Encode()
-
-		http.Redirect(w, r, uri.String(), http.StatusMovedPermanently)
+	if p.shouldRedirect() {
+		p.redirect(w, r)
 		return
 	}
-
-	p.next = min(p.page+1, p.last)
-	p.prev = max(p.page-1, 1)
 
 	if PaginationInHeader {
 		PaginationHeader(w, p)
 	} else {
-		v = PaginationBody(r, p, v)
+		v = PaginationBody(p, v)
 	}
 
 	Render(w, r, v, params...)
 }
 
+// DefaultPaginationHeader returns pagination metadata in header.
 func DefaultPaginationHeader(w http.ResponseWriter, p Pagination) {
-	if p.url == nil {
-		return
-	}
-	uri := *p.url
+	w.Header().Set(PageHeader, strconv.Itoa(p.page))
+	w.Header().Set(PerPageHeader, strconv.Itoa(p.perPage))
 
-	page := p.Page()
-	size := p.Size()
+	last := p.Last()
 
-	params := uri.Query()
-	params.Set(PageParam, strconv.Itoa(page))
-	params.Set(PerPageParam, strconv.Itoa(size))
-
-	w.Header().Set("x-page", strconv.Itoa(page))
-	w.Header().Set("x-per-page", strconv.Itoa(size))
-
-	if page != p.last {
-		params.Set(PageParam, strconv.Itoa(p.next))
-		uri.RawQuery = params.Encode()
-
-		w.Header().Set("x-next-page", strconv.Itoa(p.next))
-		w.Header().Add("Link", fmt.Sprintf(Linkf, uri.String(), "next"))
-	}
-
-	if page > 1 {
-		params.Set(PageParam, strconv.Itoa(p.prev))
-		uri.RawQuery = params.Encode()
-
-		w.Header().Set("x-prev-page", strconv.Itoa(p.prev))
-		w.Header().Add("Link", fmt.Sprintf(Linkf, uri.String(), "prev"))
-	}
-
-	params.Set(PageParam, strconv.Itoa(p.last))
-	uri.RawQuery = params.Encode()
-
-	w.Header().Set("x-total", strconv.Itoa(p.Total))
-	w.Header().Set("x-total-pages", strconv.Itoa(p.last))
-	w.Header().Add("Link", fmt.Sprintf(Linkf, uri.String(), "last"))
-}
-
-// DefaultPaginationBody returns custom pagination body
-func DefaultPaginationBody(r *http.Request, p Pagination, v interface{}) interface{} {
-	var (
-		next string
-		prev string
-		last string
-	)
-
-	uri := *r.URL
-
-	params := uri.Query()
-	params.Set(PageParam, strconv.Itoa(p.page))
-	params.Set(PerPageParam, strconv.Itoa(p.size))
-
-	if p.page != p.last {
-		params.Set(PageParam, strconv.Itoa(p.next))
-		uri.RawQuery = params.Encode()
-
-		next = uri.String()
+	if p.page != last {
+		w.Header().Set(NextPageHeader, strconv.Itoa(p.Next()))
+		w.Header().Add(LinkHeader, fmt.Sprintf(Linkf, p.NextURL(), "next"))
 	}
 
 	if p.page > 1 {
-		params.Set(PageParam, strconv.Itoa(p.prev))
-		uri.RawQuery = params.Encode()
-
-		prev = uri.String()
+		w.Header().Set(PrevPageHeader, strconv.Itoa(p.Prev()))
+		w.Header().Add(LinkHeader, fmt.Sprintf(Linkf, p.PrevURL(), "prev"))
 	}
 
-	params.Set(PageParam, strconv.Itoa(p.last))
-	uri.RawQuery = params.Encode()
+	w.Header().Set(TotalItemsHeader, strconv.Itoa(p.Total))
+	w.Header().Set(TotalPagesHeader, strconv.Itoa(last))
+	w.Header().Add(LinkHeader, fmt.Sprintf(Linkf, p.LastURL(), "last"))
+}
 
-	last = uri.String()
-	return struct {
-		Page    int         `json:"page" xml:"page"`
-		PerPage int         `json:"per_page" xml:"per_page"`
-		Total   int         `json:"total" xml:"total"`
-		Next    string      `json:"next,omitempty" xml:"next,omitempty"`
-		Prev    string      `json:"prev,omitempty" xml:"prev,omitempty"`
-		Last    string      `json:"last,omitempty" xml:"last,omitempty"`
-		Items   interface{} `json:"items" xml:"items"`
-	}{
+type simpleBody struct {
+	Page    int         `json:"page" xml:"page"`
+	PerPage int         `json:"per_page" xml:"per_page"`
+	Total   int         `json:"total" xml:"total"`
+	Next    string      `json:"next,omitempty" xml:"next,omitempty"`
+	Prev    string      `json:"prev,omitempty" xml:"prev,omitempty"`
+	Last    string      `json:"last,omitempty" xml:"last,omitempty"`
+	Items   interface{} `json:"items" xml:"items"`
+}
+
+// DefaultPaginationBody returns custom pagination body.
+func DefaultPaginationBody(p Pagination, v interface{}) interface{} {
+	return simpleBody{
 		Page:    p.page,
-		PerPage: p.size,
+		PerPage: p.perPage,
 		Total:   p.Total,
-		Next:    next,
-		Prev:    prev,
-		Last:    last,
+		Next:    p.NextURL(),
+		Prev:    p.PrevURL(),
+		Last:    p.LastURL(),
 		Items:   v,
 	}
 }

@@ -21,13 +21,13 @@ package render_test
 
 import (
 	"errors"
-	"github.com/enverbisevac/render/utest"
 	"io"
 	"net/http"
 	"strings"
 	"testing"
 
 	"github.com/enverbisevac/render"
+	"github.com/enverbisevac/render/utest"
 )
 
 func TestDefaultDecoder(t *testing.T) {

@@ -23,12 +23,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/enverbisevac/render/utest"
 	"net/http"
 	"net/url"
 	"testing"
 
 	"github.com/enverbisevac/render"
+	"github.com/enverbisevac/render/utest"
 )
 
 func TestError(t *testing.T) {

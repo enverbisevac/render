@@ -1,13 +1,33 @@
+// Copyright (c) 2022 Enver Bisevac
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy of
+// this software and associated documentation files (the "Software"), to deal in
+// the Software without restriction, including without limitation the rights to
+// use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+// the Software, and to permit persons to whom the Software is furnished to do so,
+// subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+// FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+// COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+// IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+// CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 package render
 
 import (
 	"fmt"
-	"github.com/enverbisevac/render/utest"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"reflect"
 	"testing"
+
+	"github.com/enverbisevac/render/utest"
 )
 
 func TestNewPagination(t *testing.T) {
@@ -32,9 +52,9 @@ func TestNewPagination(t *testing.T) {
 				url: makeURL("http://localhost/users?page=1&per_page=20"),
 			},
 			want: Pagination{
-				url:  makeURL("http://localhost/users?page=1&per_page=20"),
-				page: 1,
-				size: 20,
+				url:     makeURL("http://localhost/users?page=1&per_page=20"),
+				page:    1,
+				perPage: 20,
 			},
 		},
 		{
@@ -43,9 +63,9 @@ func TestNewPagination(t *testing.T) {
 				url: makeURL("http://localhost/users?per_page=20"),
 			},
 			want: Pagination{
-				url:  makeURL("http://localhost/users?per_page=20"),
-				page: 1,
-				size: 20,
+				url:     makeURL("http://localhost/users?per_page=20"),
+				page:    1,
+				perPage: 20,
 			},
 		},
 		{
@@ -54,9 +74,9 @@ func TestNewPagination(t *testing.T) {
 				url: makeURL("http://localhost/users?page=1"),
 			},
 			want: Pagination{
-				url:  makeURL("http://localhost/users?page=1"),
-				page: 1,
-				size: PerPageDefault,
+				url:     makeURL("http://localhost/users?page=1"),
+				page:    1,
+				perPage: PerPageDefault,
 			},
 		},
 		{
@@ -65,9 +85,9 @@ func TestNewPagination(t *testing.T) {
 				url: makeURL("http://localhost/users"),
 			},
 			want: Pagination{
-				url:  makeURL("http://localhost/users"),
-				page: 1,
-				size: PerPageDefault,
+				url:     makeURL("http://localhost/users"),
+				page:    1,
+				perPage: PerPageDefault,
 			},
 		},
 	}
@@ -81,20 +101,22 @@ func TestNewPagination(t *testing.T) {
 }
 
 func TestPagination_Last(t *testing.T) {
-
 	p := Pagination{
-		last: 10,
+		perPage: PerPageDefault,
+		Total:   100,
 	}
 
-	utest.Equals(t, 10, p.Last())
+	utest.Equals(t, 4, p.Last())
 }
 
 func TestPagination_Next(t *testing.T) {
 	p := Pagination{
-		next: 10,
+		page:    1,
+		perPage: PerPageDefault,
+		Total:   100,
 	}
 
-	utest.Equals(t, 10, p.Next())
+	utest.Equals(t, 2, p.Next())
 }
 
 func TestPagination_Page(t *testing.T) {
@@ -107,23 +129,22 @@ func TestPagination_Page(t *testing.T) {
 
 func TestPagination_Prev(t *testing.T) {
 	p := Pagination{
-		prev: 15,
+		page:    2,
+		perPage: PerPageDefault,
+		Total:   100,
 	}
 
-	utest.Equals(t, 15, p.Prev())
+	utest.Equals(t, 1, p.Prev())
 }
 
 func TestDefaultPaginationHeader(t *testing.T) {
-	f := func(uri string, next, prev, size, last, total int) Pagination {
+	f := func(uri string, size, total int) Pagination {
 		_url, err := url.Parse(uri)
 		if err != nil {
 			return Pagination{}
 		}
 		pagination := NewPagination(_url)
-		pagination.next = next
-		pagination.prev = prev
-		pagination.size = size
-		pagination.last = last
+		pagination.perPage = size
 		pagination.Total = total
 		return pagination
 	}
@@ -140,17 +161,16 @@ func TestDefaultPaginationHeader(t *testing.T) {
 			name: "basic test",
 			args: args{
 				w: httptest.NewRecorder(),
-				p: f(fmt.Sprintf("http://localhost/users?%s=1&%s=20", PageParam, PerPageParam),
-					2, 0, 20, 5, 100),
+				p: f(fmt.Sprintf("http://localhost/users?%s=1&%s=20", PageParam, PerPageParam), 20, 100),
 			},
 			exp: map[string]string{
-				"x-page":        "1",
-				"x-per-page":    "20",
-				"x-next-page":   "2",
-				"x-prev-page":   "",
-				"x-total":       "100",
-				"x-total-pages": "5",
-				"Link": fmt.Sprintf("<http://localhost/users?%s=2&%s=20>; rel=\"next\"",
+				PageHeader:       "1",
+				PerPageHeader:    "20",
+				"x-next-page":    "2",
+				PrevPageHeader:   "",
+				TotalItemsHeader: "100",
+				TotalPagesHeader: "5",
+				LinkHeader: fmt.Sprintf("<http://localhost/users?%s=2&%s=20>; rel=\"next\"",
 					PageParam, PerPageParam),
 			},
 		},
@@ -158,63 +178,44 @@ func TestDefaultPaginationHeader(t *testing.T) {
 			name: "test last page",
 			args: args{
 				w: httptest.NewRecorder(),
-				p: f(fmt.Sprintf("http://localhost/users?%s=5&%s=20", PageParam, PerPageParam),
-					0, 4, 20, 5, 100),
+				p: f(fmt.Sprintf("http://localhost/users?%s=5&%s=20", PageParam, PerPageParam), 20, 100),
 			},
 			exp: map[string]string{
-				"x-page":        "5",
-				"x-per-page":    "20",
-				"x-prev-page":   "4",
-				"x-total":       "100",
-				"x-total-pages": "5",
-				"Link": fmt.Sprintf("<http://localhost/users?%s=4&%s=20>; rel=\"prev\"",
+				PageHeader:       "5",
+				PerPageHeader:    "20",
+				PrevPageHeader:   "4",
+				TotalItemsHeader: "100",
+				TotalPagesHeader: "5",
+				LinkHeader: fmt.Sprintf("<http://localhost/users?%s=4&%s=20>; rel=\"prev\"",
 					PageParam, PerPageParam),
-			},
-		},
-		{
-			name: "uri is nil",
-			args: args{
-				w: httptest.NewRecorder(),
-				p: Pagination{},
-			},
-			exp: map[string]string{
-				"x-page":        "",
-				"x-per-page":    "",
-				"x-prev-page":   "",
-				"x-total":       "",
-				"x-total-pages": "",
-				"Link":          "",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			DefaultPaginationHeader(tt.args.w, tt.args.p)
-			utest.Equals(t, tt.exp["x-page"], tt.args.w.Header().Get("x-page"))
-			utest.Equals(t, tt.exp["x-per-page"], tt.args.w.Header().Get("x-per-page"))
-			utest.Equals(t, tt.exp["x-next-page"], tt.args.w.Header().Get("x-next-page"))
-			utest.Equals(t, tt.exp["x-total"], tt.args.w.Header().Get("x-total"))
-			utest.Equals(t, tt.exp["x-total-pages"], tt.args.w.Header().Get("x-total-pages"))
-			utest.Equals(t, tt.exp["Link"], tt.args.w.Header().Get("Link"))
+			utest.Equals(t, tt.exp[PageHeader], tt.args.w.Header().Get(PageHeader))
+			utest.Equals(t, tt.exp[PerPageHeader], tt.args.w.Header().Get(PerPageHeader))
+			utest.Equals(t, tt.exp[NextPageHeader], tt.args.w.Header().Get(NextPageHeader))
+			utest.Equals(t, tt.exp[TotalItemsHeader], tt.args.w.Header().Get(TotalItemsHeader))
+			utest.Equals(t, tt.exp[TotalPagesHeader], tt.args.w.Header().Get(TotalPagesHeader))
+			utest.Equals(t, tt.exp[LinkHeader], tt.args.w.Header().Get(LinkHeader))
 		})
 	}
 }
 
 func TestPagination_Size(t *testing.T) {
 	p := Pagination{
-		size: 10,
+		perPage: 10,
 	}
 
-	utest.Equals(t, 10, p.Size())
+	utest.Equals(t, 10, p.PerPage())
 }
 
 func TestPagination_Render(t *testing.T) {
 	type fields struct {
 		page  int
 		size  int
-		prev  int
-		next  int
-		last  int
 		Total int
 	}
 	type args struct {
@@ -231,12 +232,9 @@ func TestPagination_Render(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := Pagination{
-				page:  tt.fields.page,
-				size:  tt.fields.size,
-				prev:  tt.fields.prev,
-				next:  tt.fields.next,
-				last:  tt.fields.last,
-				Total: tt.fields.Total,
+				page:    tt.fields.page,
+				perPage: tt.fields.size,
+				Total:   tt.fields.Total,
 			}
 			p.Render(tt.args.w, tt.args.r, tt.args.v, tt.args.params...)
 		})

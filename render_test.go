@@ -20,11 +20,11 @@
 package render_test
 
 import (
-	"github.com/enverbisevac/render/utest"
 	"net/http"
 	"testing"
 
 	"github.com/enverbisevac/render"
+	"github.com/enverbisevac/render/utest"
 )
 
 func TestBlob(t *testing.T) {
