@@ -32,7 +32,7 @@ type User struct {
 }
 
 func init() {
-	render.PaginationInHeader = false
+	render.PaginationInHeader = true
 }
 
 func helloHandler(w http.ResponseWriter, r *http.Request) {

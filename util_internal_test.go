@@ -42,18 +42,10 @@ func Test_max(t *testing.T) {
 		{
 			name: "happy path",
 			args: args{
-				x: 10,
-				y: 11,
+				x: 11,
+				y: 10,
 			},
 			want: 11,
-		},
-		{
-			name: "happy path",
-			args: args{
-				x: 54,
-				y: 60,
-			},
-			want: 60,
 		},
 	}
 	for _, tt := range tests {
@@ -91,6 +83,14 @@ func Test_min(t *testing.T) {
 			},
 			want: 10,
 		},
+		{
+			name: "y == 0",
+			args: args{
+				x: 1,
+				y: 0,
+			},
+			want: 1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -118,6 +118,22 @@ func Test_totalPages(t *testing.T) {
 				total: 100,
 			},
 			want: 4,
+		},
+		{
+			name: "happy path, if quotient 0",
+			args: args{
+				size:  26,
+				total: 25,
+			},
+			want: 1,
+		},
+		{
+			name: "happy path, default case",
+			args: args{
+				size:  3,
+				total: 5,
+			},
+			want: 2,
 		},
 	}
 	for _, tt := range tests {

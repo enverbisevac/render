@@ -22,6 +22,7 @@ package render
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 )
 
@@ -36,18 +37,52 @@ var (
 	Linkf = `<%s>; rel="%s"`
 	// PaginationInHeader write pagination in header
 	PaginationInHeader = true
+	// PaginationHeader generates pagination in header
+	PaginationHeader = DefaultPaginationHeader
 	// PaginationBody generates pagination in body
 	PaginationBody = DefaultPaginationBody
 )
 
 // Pagination holds all page related data
 type Pagination struct {
+	url   *url.URL
 	page  int
 	size  int
 	prev  int
 	next  int
 	last  int
 	Total int
+}
+
+func PaginationFromRequest(r *http.Request) Pagination {
+	return NewPagination(r.URL)
+}
+
+// NewPagination parses url and return new pagination object
+func NewPagination(url *url.URL) Pagination {
+	queryParams := url.Query()
+	strPage := queryParams.Get(PageParam)
+	strPerPage := queryParams.Get(PerPageParam)
+
+	page, err := strconv.Atoi(strPage)
+	if err != nil {
+		page = 1
+	}
+	size, err := strconv.Atoi(strPerPage)
+	if err != nil {
+		size = PerPageDefault
+	}
+
+	return Pagination{
+		url:  url,
+		page: page,
+		size: size,
+	}
+}
+
+// URL returns non exported page value
+func (p Pagination) URL() *url.URL {
+	return p.url
 }
 
 // Page returns non exported page value
@@ -60,17 +95,17 @@ func (p Pagination) Size() int {
 	return p.size
 }
 
-// Prev returns previous page
+// Prev page
 func (p Pagination) Prev() int {
 	return p.prev
 }
 
-// Next returns next page
+// Next page
 func (p Pagination) Next() int {
 	return p.next
 }
 
-// Last returns last page
+// Last page
 func (p Pagination) Last() int {
 	return p.last
 }
@@ -110,12 +145,52 @@ func (p Pagination) Render(w http.ResponseWriter, r *http.Request, v interface{}
 	p.prev = max(p.page-1, 1)
 
 	if PaginationInHeader {
-		paginationHeader(w, r, p)
+		PaginationHeader(w, p)
 	} else {
 		v = PaginationBody(r, p, v)
 	}
 
 	Render(w, r, v, params...)
+}
+
+func DefaultPaginationHeader(w http.ResponseWriter, p Pagination) {
+	if p.url == nil {
+		return
+	}
+	uri := *p.url
+
+	page := p.Page()
+	size := p.Size()
+
+	params := uri.Query()
+	params.Set(PageParam, strconv.Itoa(page))
+	params.Set(PerPageParam, strconv.Itoa(size))
+
+	w.Header().Set("x-page", strconv.Itoa(page))
+	w.Header().Set("x-per-page", strconv.Itoa(size))
+
+	if page != p.last {
+		params.Set(PageParam, strconv.Itoa(p.next))
+		uri.RawQuery = params.Encode()
+
+		w.Header().Set("x-next-page", strconv.Itoa(p.next))
+		w.Header().Add("Link", fmt.Sprintf(Linkf, uri.String(), "next"))
+	}
+
+	if page > 1 {
+		params.Set(PageParam, strconv.Itoa(p.prev))
+		uri.RawQuery = params.Encode()
+
+		w.Header().Set("x-prev-page", strconv.Itoa(p.prev))
+		w.Header().Add("Link", fmt.Sprintf(Linkf, uri.String(), "prev"))
+	}
+
+	params.Set(PageParam, strconv.Itoa(p.last))
+	uri.RawQuery = params.Encode()
+
+	w.Header().Set("x-total", strconv.Itoa(p.Total))
+	w.Header().Set("x-total-pages", strconv.Itoa(p.last))
+	w.Header().Add("Link", fmt.Sprintf(Linkf, uri.String(), "last"))
 }
 
 // DefaultPaginationBody returns custom pagination body
@@ -125,6 +200,7 @@ func DefaultPaginationBody(r *http.Request, p Pagination, v interface{}) interfa
 		prev string
 		last string
 	)
+
 	uri := *r.URL
 
 	params := uri.Query()
@@ -166,64 +242,4 @@ func DefaultPaginationBody(r *http.Request, p Pagination, v interface{}) interfa
 		Last:    last,
 		Items:   v,
 	}
-}
-
-// PaginationFromRequest loads data from url like:
-// per_page, page etc.
-func PaginationFromRequest(r *http.Request) Pagination {
-	queryParams := r.URL.Query()
-	strPage := queryParams.Get(PageParam)
-	strPerPage := queryParams.Get(PerPageParam)
-
-	if strPage == "" || strPerPage == "" {
-		return Pagination{}
-	}
-
-	page, err := strconv.Atoi(strPage)
-	if err != nil {
-		return Pagination{}
-	}
-	size, err := strconv.Atoi(strPerPage)
-	if err != nil {
-		return Pagination{}
-	}
-
-	return Pagination{
-		page: page,
-		size: size,
-	}
-}
-
-func paginationHeader(w http.ResponseWriter, r *http.Request, p Pagination) {
-	uri := *r.URL
-
-	params := uri.Query()
-	params.Set(PageParam, strconv.Itoa(p.page))
-	params.Set(PerPageParam, strconv.Itoa(p.size))
-
-	w.Header().Set("x-page", strconv.Itoa(p.page))
-	w.Header().Set("x-per-page", strconv.Itoa(p.size))
-
-	if p.page != p.last {
-		params.Set(PageParam, strconv.Itoa(p.next))
-		uri.RawQuery = params.Encode()
-
-		w.Header().Set("x-next-page", strconv.Itoa(p.next))
-		w.Header().Add("Link", fmt.Sprintf(Linkf, uri.String(), "next"))
-	}
-
-	if p.page > 1 {
-		params.Set(PageParam, strconv.Itoa(p.prev))
-		uri.RawQuery = params.Encode()
-
-		w.Header().Set("x-prev-page", strconv.Itoa(p.prev))
-		w.Header().Add("Link", fmt.Sprintf(Linkf, uri.String(), "prev"))
-	}
-
-	params.Set(PageParam, strconv.Itoa(p.last))
-	uri.RawQuery = params.Encode()
-
-	w.Header().Set("x-total", strconv.Itoa(p.Total))
-	w.Header().Set("x-total-pages", strconv.Itoa(p.last))
-	w.Header().Add("Link", fmt.Sprintf(Linkf, uri.String(), "last"))
 }

@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/enverbisevac/render/utest"
 	"net/http"
 	"net/url"
 	"testing"
@@ -147,8 +148,8 @@ func TestError(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			render.Error(tt.args.w, tt.args.r, tt.args.err, tt.args.params...)
-			equals(t, tt.status, status)
-			equals(t, string(tt.body), string(buffer))
+			utest.Equals(t, tt.status, status)
+			utest.Equals(t, string(tt.body), string(buffer))
 			status = 0
 			buffer = []byte{}
 			header = http.Header{}

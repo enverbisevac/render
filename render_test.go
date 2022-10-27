@@ -20,6 +20,7 @@
 package render_test
 
 import (
+	"github.com/enverbisevac/render/utest"
 	"net/http"
 	"testing"
 
@@ -156,9 +157,9 @@ func TestBlob(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			render.Blob(tt.args.w, tt.args.v, tt.args.params...)
-			equals(t, tt.status, status)
-			equals(t, tt.content, buffer)
-			equals(t, tt.header, header)
+			utest.Equals(t, tt.status, status)
+			utest.Equals(t, tt.content, buffer)
+			utest.Equals(t, tt.header, header)
 			status = 0
 			buffer = []byte{}
 			header = http.Header{}

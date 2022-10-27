@@ -21,6 +21,7 @@ package render_test
 
 import (
 	"errors"
+	"github.com/enverbisevac/render/utest"
 	"io"
 	"net/http"
 	"strings"
@@ -103,7 +104,7 @@ func TestDefaultDecoder(t *testing.T) {
 			} else {
 				user, ok := tt.args.v.(*User)
 				if ok {
-					equals(t, user.Name, "Enver")
+					utest.Equals(t, user.Name, "Enver")
 				}
 			}
 		})

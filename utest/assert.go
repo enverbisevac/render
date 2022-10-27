@@ -17,7 +17,7 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-package render_test
+package utest
 
 import (
 	"fmt"
@@ -27,10 +27,10 @@ import (
 	"testing"
 )
 
-// assert fails the test if the condition is false.
+// Assert fails the test if the condition is false.
 //
 //nolint:unused,forbidigo
-func assert(tb testing.TB, condition bool, msg string, v ...interface{}) {
+func Assert(tb testing.TB, condition bool, msg string, v ...interface{}) {
 	tb.Helper()
 	if !condition {
 		_, file, line, _ := runtime.Caller(1)
@@ -39,10 +39,10 @@ func assert(tb testing.TB, condition bool, msg string, v ...interface{}) {
 	}
 }
 
-// ok fails the test if an err is not nil.
+// OK fails the test if an err is not nil.
 //
 //nolint:unused,forbidigo
-func ok(tb testing.TB, err error) {
+func OK(tb testing.TB, err error) {
 	tb.Helper()
 	if err != nil {
 		_, file, line, _ := runtime.Caller(1)
@@ -51,10 +51,10 @@ func ok(tb testing.TB, err error) {
 	}
 }
 
-// equals fails the test if exp is not equal to act.
+// Equals fails the test if exp is not equal to act.
 //
 //nolint:forbidigo
-func equals(tb testing.TB, exp, act interface{}) {
+func Equals(tb testing.TB, exp, act interface{}) {
 	tb.Helper()
 	if !reflect.DeepEqual(exp, act) {
 		_, file, line, _ := runtime.Caller(1)
