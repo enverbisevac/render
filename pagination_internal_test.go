@@ -30,6 +30,12 @@ import (
 	"github.com/enverbisevac/render/utest"
 )
 
+//nolint:unparam
+func formatURL(page, perPage int) string {
+	return fmt.Sprintf("http://localhost/users?%s=%d&%s=%d",
+		PageParam, page, PerPageParam, perPage)
+}
+
 func TestNewPagination(t *testing.T) {
 	makeURL := func(uri string) *url.URL {
 		parse, err := url.Parse(uri)
@@ -50,11 +56,11 @@ func TestNewPagination(t *testing.T) {
 		{
 			name: "happy path",
 			args: args{
-				url:        makeURL("http://localhost/users?page=1&per_page=20"),
+				url:        makeURL(formatURL(1, 20)),
 				totalItems: 100,
 			},
 			want: Pagination{
-				url:     makeURL("http://localhost/users?page=1&per_page=20"),
+				url:     makeURL(formatURL(1, 20)),
 				page:    1,
 				perPage: 20,
 				last:    5,
@@ -113,6 +119,42 @@ func TestNewPagination(t *testing.T) {
 	}
 }
 
+func TestPaginationFromRequest(t *testing.T) {
+	uri := &url.URL{
+		Scheme:   "http",
+		Host:     "localhost",
+		Path:     "users",
+		RawQuery: "page=1&per_page=20",
+	}
+	type args struct {
+		r          *http.Request
+		totalItems int
+		options    []PaginationOption
+	}
+	test := struct {
+		args args
+		want Pagination
+	}{
+		args: args{
+			r: &http.Request{
+				URL: uri,
+			},
+			totalItems: 60,
+		},
+		want: Pagination{
+			url:     uri,
+			page:    1,
+			perPage: 20,
+			total:   60,
+			last:    3,
+		},
+	}
+
+	if got := PaginationFromRequest(test.args.r, test.args.totalItems, test.args.options...); !reflect.DeepEqual(got, test.want) {
+		t.Errorf("PaginationFromRequest() = %v, want %v", got, test.want)
+	}
+}
+
 func TestPagination_Last(t *testing.T) {
 	p := Pagination{
 		last: 10,
@@ -137,12 +179,381 @@ func TestPagination_Page(t *testing.T) {
 	utest.Equals(t, 1, p.Page())
 }
 
+func TestPagination_PerPage(t *testing.T) {
+	p := Pagination{
+		perPage: 20,
+	}
+
+	utest.Equals(t, 20, p.PerPage())
+}
+
 func TestPagination_Prev(t *testing.T) {
 	p := Pagination{
 		page: 2,
 	}
 
 	utest.Equals(t, 1, p.Prev())
+}
+
+func TestPagination_URL(t *testing.T) {
+	uri := &url.URL{
+		Scheme: "http",
+		Host:   "localhost",
+	}
+	p := Pagination{
+		url: uri,
+	}
+
+	utest.Equals(t, uri, p.URL())
+}
+
+//nolint:dupl
+func TestPagination_PrevURL(t *testing.T) {
+	type fields struct {
+		url     *url.URL
+		page    int
+		perPage int
+		last    int
+		total   int
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		{
+			name: "url is nil",
+			fields: fields{
+				page:    2,
+				perPage: 20,
+				last:    3,
+				total:   60,
+			},
+			want: "",
+		},
+		{
+			name: "happy path",
+			fields: fields{
+				url: &url.URL{
+					Scheme: "http",
+					Host:   "localhost",
+					Path:   "users",
+				},
+				page:    2,
+				perPage: 20,
+				last:    3,
+				total:   60,
+			},
+			want: formatURL(1, 20),
+		},
+		{
+			name: "first page has no prev page",
+			fields: fields{
+				url: &url.URL{
+					Scheme: "http",
+					Host:   "localhost",
+					Path:   "users",
+				},
+				page:    1,
+				perPage: 20,
+				last:    3,
+				total:   60,
+			},
+			want: "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := Pagination{
+				url:     tt.fields.url,
+				page:    tt.fields.page,
+				perPage: tt.fields.perPage,
+				last:    tt.fields.last,
+				total:   tt.fields.total,
+			}
+			if got := p.PrevURL(); got != tt.want {
+				t.Errorf("PrevURL() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+//nolint:dupl
+func TestPagination_NextURL(t *testing.T) {
+	type fields struct {
+		url     *url.URL
+		page    int
+		perPage int
+		last    int
+		total   int
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		{
+			name: "url is nil",
+			fields: fields{
+				page:    1,
+				perPage: 20,
+				last:    3,
+				total:   60,
+			},
+			want: "",
+		},
+		{
+			name: "happy path",
+			fields: fields{
+				url: &url.URL{
+					Scheme: "http",
+					Host:   "localhost",
+					Path:   "users",
+				},
+				page:    1,
+				perPage: 20,
+				last:    3,
+				total:   60,
+			},
+			want: formatURL(2, 20),
+		},
+		{
+			name: "last page has no next page",
+			fields: fields{
+				url: &url.URL{
+					Scheme: "http",
+					Host:   "localhost",
+					Path:   "users",
+				},
+				page:    3,
+				perPage: 20,
+				last:    3,
+				total:   60,
+			},
+			want: "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := Pagination{
+				url:     tt.fields.url,
+				page:    tt.fields.page,
+				perPage: tt.fields.perPage,
+				last:    tt.fields.last,
+				total:   tt.fields.total,
+			}
+			if got := p.NextURL(); got != tt.want {
+				t.Errorf("NextURL() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestPagination_LastURL(t *testing.T) {
+	type fields struct {
+		url     *url.URL
+		page    int
+		perPage int
+		last    int
+		total   int
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		{
+			name: "url is nil",
+			fields: fields{
+				page:    1,
+				perPage: 20,
+				last:    3,
+				total:   60,
+			},
+			want: "",
+		},
+		{
+			name: "happy path",
+			fields: fields{
+				url: &url.URL{
+					Scheme: "http",
+					Host:   "localhost",
+					Path:   "users",
+				},
+				page:    3,
+				perPage: 20,
+				last:    3,
+				total:   60,
+			},
+			want: formatURL(3, 20),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := Pagination{
+				url:     tt.fields.url,
+				page:    tt.fields.page,
+				perPage: tt.fields.perPage,
+				last:    tt.fields.last,
+				total:   tt.fields.total,
+			}
+			if got := p.LastURL(); got != tt.want {
+				t.Errorf("LastURL() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestPagination_shouldRedirect(t *testing.T) {
+	type fields struct {
+		url     *url.URL
+		page    int
+		perPage int
+		last    int
+		total   int
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   bool
+	}{
+		{
+			name: "happy path",
+			fields: fields{
+				page:    1,
+				perPage: 20,
+				last:    3,
+				total:   60,
+			},
+			want: false,
+		},
+		{
+			name: "page is 0 return true",
+			fields: fields{
+				page:    0,
+				perPage: 20,
+				last:    3,
+				total:   60,
+			},
+			want: true,
+		},
+		{
+			name: "page is greater then total pages return true",
+			fields: fields{
+				page:    4,
+				perPage: 20,
+				last:    3,
+				total:   60,
+			},
+			want: true,
+		},
+		{
+			name: "per page is 0 return true",
+			fields: fields{
+				page:    1,
+				perPage: 0,
+				last:    3,
+				total:   60,
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := Pagination{
+				url:     tt.fields.url,
+				page:    tt.fields.page,
+				perPage: tt.fields.perPage,
+				last:    tt.fields.last,
+				total:   tt.fields.total,
+			}
+			if got := p.shouldRedirect(); got != tt.want {
+				t.Errorf("Pagination.shouldRedirect() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestPagination_redirect(t *testing.T) {
+	type fields struct {
+		url     *url.URL
+		page    int
+		perPage int
+		last    int
+		total   int
+	}
+	type args struct {
+		w *httptest.ResponseRecorder
+		r *http.Request
+	}
+
+	type test struct {
+		name   string
+		fields fields
+		args   args
+		want   struct {
+			url    string
+			status int
+		}
+	}
+
+	createTest := func(name string, page, perPage, total int, uri string, status int) test {
+		last := total / PerPageDefault
+		if perPage > 0 {
+			last = total / perPage
+		}
+		return test{
+			name: name,
+			fields: fields{
+				page:    page,
+				perPage: perPage,
+				last:    last,
+				total:   total,
+			},
+			args: args{
+				w: httptest.NewRecorder(),
+				r: &http.Request{
+					URL: &url.URL{
+						Scheme: "http",
+						Host:   "localhost",
+						Path:   "users",
+					},
+				},
+			},
+			want: struct {
+				url    string
+				status int
+			}{
+				url:    uri,
+				status: status,
+			},
+		}
+	}
+	tests := []test{
+		createTest("happy path - redirect to the same address", 1, 20, 60,
+			"http://localhost/users?page=1&per_page=20", http.StatusMovedPermanently),
+		createTest("if page is 0 redirect to page 1", 0, 20, 60,
+			"http://localhost/users?page=1&per_page=20", http.StatusMovedPermanently),
+		createTest("if page is greater total pages the redirect to last one", 4, 20, 60,
+			"http://localhost/users?page=3&per_page=20", http.StatusMovedPermanently),
+		createTest("if per page is 0 redirect to same page with default per page", 5, 0, 100,
+			fmt.Sprintf("http://localhost/users?page=4&per_page=%d", PerPageDefault),
+			http.StatusMovedPermanently),
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := Pagination{
+				url:     tt.fields.url,
+				page:    tt.fields.page,
+				perPage: tt.fields.perPage,
+				last:    tt.fields.last,
+				total:   tt.fields.total,
+			}
+			p.redirect(tt.args.w, tt.args.r)
+			utest.Equals(t, tt.want.url, tt.args.w.Header().Get("Location"))
+			utest.Equals(t, tt.want.status, tt.args.w.Code)
+		})
+	}
 }
 
 func TestDefaultPaginationHeader(t *testing.T) {
@@ -167,7 +578,7 @@ func TestDefaultPaginationHeader(t *testing.T) {
 			name: "basic test",
 			args: args{
 				w: httptest.NewRecorder(),
-				p: f(fmt.Sprintf("http://localhost/users?%s=1&%s=20", PageParam, PerPageParam), 20, 100),
+				p: f(formatURL(1, 20), 20, 100),
 			},
 			exp: map[string]string{
 				PageHeader:       "1",
@@ -176,15 +587,14 @@ func TestDefaultPaginationHeader(t *testing.T) {
 				PrevPageHeader:   "",
 				TotalItemsHeader: "100",
 				TotalPagesHeader: "5",
-				LinkHeader: fmt.Sprintf("<http://localhost/users?%s=2&%s=20>; rel=\"next\"",
-					PageParam, PerPageParam),
+				LinkHeader:       fmt.Sprintf("<%s>; rel=\"next\"", formatURL(2, 20)),
 			},
 		},
 		{
 			name: "test last page",
 			args: args{
 				w: httptest.NewRecorder(),
-				p: f(fmt.Sprintf("http://localhost/users?%s=5&%s=20", PageParam, PerPageParam), 20, 100),
+				p: f(formatURL(5, 20), 20, 100),
 			},
 			exp: map[string]string{
 				PageHeader:       "5",
@@ -192,8 +602,7 @@ func TestDefaultPaginationHeader(t *testing.T) {
 				PrevPageHeader:   "4",
 				TotalItemsHeader: "100",
 				TotalPagesHeader: "5",
-				LinkHeader: fmt.Sprintf("<http://localhost/users?%s=4&%s=20>; rel=\"prev\"",
-					PageParam, PerPageParam),
+				LinkHeader:       fmt.Sprintf("<%s>; rel=\"prev\"", formatURL(4, 20)),
 			},
 		},
 	}
@@ -210,12 +619,41 @@ func TestDefaultPaginationHeader(t *testing.T) {
 	}
 }
 
-func TestPagination_Size(t *testing.T) {
-	p := Pagination{
-		perPage: 10,
+func TestDefaultPaginationBody(t *testing.T) {
+	type args struct {
+		p Pagination
+		v interface{}
+	}
+	test := struct {
+		args args
+		want interface{}
+	}{
+		args: args{
+			p: Pagination{
+				url: &url.URL{
+					Scheme: "http",
+					Host:   "localhost",
+					Path:   "users",
+				},
+				page:    1,
+				perPage: 20,
+				last:    3,
+				total:   60,
+			},
+		},
+		want: simpleBody{
+			Page:    1,
+			PerPage: 20,
+			Total:   60,
+			Prev:    "",
+			Next:    formatURL(2, 20),
+			Last:    formatURL(3, 20),
+		},
 	}
 
-	utest.Equals(t, 10, p.PerPage())
+	if got := DefaultPaginationBody(test.args.p, test.args.v); !reflect.DeepEqual(got, test.want) {
+		t.Errorf("DefaultPaginationBody() = %v, want %v", got, test.want)
+	}
 }
 
 func TestPagination_Render(t *testing.T) {

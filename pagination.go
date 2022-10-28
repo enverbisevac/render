@@ -196,6 +196,11 @@ func (p Pagination) LastURL() string {
 	return p.url.String()
 }
 
+// Total returns total number of elements
+func (p Pagination) Total() int {
+	return p.total
+}
+
 func (p Pagination) shouldRedirect() bool {
 	last := p.last
 	switch {
@@ -211,18 +216,23 @@ func (p Pagination) shouldRedirect() bool {
 
 func (p Pagination) redirect(w http.ResponseWriter, r *http.Request) {
 	uri := *r.URL
+
 	last := p.last
 	page := p.page
 	perPage := p.perPage
+
 	if page == 0 {
 		page = 1
 	}
+
 	if page > last {
 		page = last
 	}
+
 	if perPage == 0 {
 		perPage = PerPageDefault
 	}
+
 	params := uri.Query()
 	params.Set(PageParam, strconv.Itoa(page))
 	params.Set(PerPageParam, strconv.Itoa(perPage))
